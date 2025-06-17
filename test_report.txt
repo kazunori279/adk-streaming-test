@@ -1,26 +1,48 @@
 # ADK Bidirectional Streaming Test Report
 
 ## Test Summary
-- **Test Date**: 2025-06-17 19:13:24
-- **Test Type**: TEXT
+- **Test Date**: 2025-06-17 21:14:54
+- **Test Type**: VOICE
 - **Total Tests**: 6
-- **Passed Tests**: 4
-- **Failed Tests**: 2
-- **Success Rate**: 66.7%
+- **Passed Tests**: 6
+- **Failed Tests**: 0
+- **Success Rate**: 100.0%
+
+## Environment Configuration
+- **Google Cloud Project**: gcp-samples-ic0
+- **Google Cloud Location**: us-central1
 
 ## Detailed Results
 
 ### Google AI Studio Platform
 
-- **gemini-2.0-flash-live-001**: ✅ PASS
-- **gemini-2.5-flash-preview-native-audio-dialog**: ❌ FAIL
-- **gemini-2.5-flash-exp-native-audio-thinking-dialog**: ❌ FAIL
-- **gemini-2.0-flash-exp**: ✅ PASS
+- **gemini-2.0-flash-live-001 (voice)**: ✅ PASS
+- **gemini-2.5-flash-preview-native-audio-dialog (voice)**: ✅ PASS
+- **gemini-2.5-flash-exp-native-audio-thinking-dialog (voice)**: ✅ PASS
+- **gemini-2.0-flash-exp (voice)**: ✅ PASS
 
 ### Vertex AI Platform
 
-- **gemini-2.0-flash-live-preview-04-09**: ✅ PASS
-- **gemini-2.0-flash-exp**: ✅ PASS
+- **gemini-2.0-flash-live-preview-04-09 (voice)**: ✅ PASS
+- **gemini-2.0-flash-exp (voice)**: ✅ PASS
+
+## Voice Transcription Results
+
+### Google AI Studio Platform
+
+**gemini-2.0-flash-live-001**: "it is 9:13 p.m. in Tokyo Japan"
+
+**gemini-2.5-flash-preview-native-audio-dialog**: "the current time in Tokyo Japan is 913 p.m. jst"
+
+**gemini-2.5-flash-exp-native-audio-thinking-dialog**: "the current time in Tokyo Japan is 9:14 p.m. the time zone is Asia Tokyo"
+
+**gemini-2.0-flash-exp**: "it is 9:14 p.m. in Tokyo Japan"
+
+### Vertex AI Platform
+
+**gemini-2.0-flash-live-preview-04-09**: "it's 9:14 p.m. in Tokyo"
+
+**gemini-2.0-flash-exp**: "it's 9:14 p.m. in Tokyo"
 
 ## Test Methodology
 
@@ -37,15 +59,12 @@
 - **Google AI Studio**: Uses GOOGLE_API_KEY with GOOGLE_GENAI_USE_VERTEXAI=FALSE
 - **Vertex AI**: Uses GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION with GOOGLE_GENAI_USE_VERTEXAI=TRUE
 
-### Text Chat Testing
-- Sends text query via ADK streaming API
-- Receives streaming text response
-- Validates response content for time information
-
-## Failed Test Analysis
-
-- **google-ai-studio-gemini-2.5-flash-preview-native-audio-dialog-text**: Audio-only model correctly rejects text input (expected behavior)
-- **google-ai-studio-gemini-2.5-flash-exp-native-audio-thinking-dialog-text**: Audio-only model correctly rejects text input (expected behavior)
+### Voice Chat Testing
+- Generates voice input using Google Cloud Text-to-Speech
+- Sends audio to ADK streaming API
+- Receives audio response from model
+- Plays audio response using PyAudio
+- Transcribes response using Google Cloud Speech-to-Text for validation
 
 ## Environment Information
 - **ADK Version**: 1.3.0
