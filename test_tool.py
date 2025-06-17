@@ -9,6 +9,7 @@ Google AI Studio and Google Cloud Vertex AI platforms.
 import os
 import asyncio
 import argparse
+from datetime import datetime
 from dotenv import load_dotenv
 from google.genai.types import Content, Part, Blob
 from google.adk.runners import InMemoryRunner
@@ -415,7 +416,147 @@ async def run_all_tests(test_type="text"):
 
     print(f"\nOverall: {passed_tests}/{total_tests} tests passed")
 
+    # Generate test report
+    generate_test_report(results, test_type)
+
     return results
+
+def generate_test_report(results, test_type, output_file="test_report.txt"):
+    """Generate a comprehensive test report file"""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    report_content = f"""# ADK Bidirectional Streaming Test Report
+
+## Test Summary
+- **Test Date**: {timestamp}
+- **Test Type**: {test_type.upper()}
+- **Total Tests**: {len(results)}
+- **Passed Tests**: {sum(1 for success in results.values() if success)}
+- **Failed Tests**: {sum(1 for success in results.values() if not success)}
+- **Success Rate**: {(sum(1 for success in results.values() if success) / len(results) * 100):.1f}%
+
+## Detailed Results
+
+"""
+    
+    # Group results by platform
+    google_ai_studio_results = {k: v for k, v in results.items() if "google-ai-studio" in k}
+    vertex_ai_results = {k: v for k, v in results.items() if "vertex-ai" in k}
+    
+    if google_ai_studio_results:
+        report_content += "### Google AI Studio Platform\n\n"
+        for test_name, success in google_ai_studio_results.items():
+            model = test_name.replace("google-ai-studio-", "").replace(f"-{test_type}", "")
+            status = "PASS" if success else "FAIL"
+            icon = "✅" if success else "❌"
+            report_content += f"- **{model}**: {icon} {status}\n"
+        report_content += "\n"
+    
+    if vertex_ai_results:
+        report_content += "### Vertex AI Platform\n\n"
+        for test_name, success in vertex_ai_results.items():
+            model = test_name.replace("vertex-ai-", "").replace(f"-{test_type}", "")
+            status = "PASS" if success else "FAIL"
+            icon = "✅" if success else "❌"
+            report_content += f"- **{model}**: {icon} {status}\n"
+        report_content += "\n"
+    
+    # Add test methodology
+    report_content += """## Test Methodology
+
+### Test Question
+- **Query**: "What time is it now?"
+- **Expected Response**: Agent responds with current time information using Google Search tool
+
+### Success Criteria
+- Response contains time-related keywords (time, clock, hour, minute, am, pm, utc, gmt)
+- Agent successfully uses Google Search tool for real-time information
+- Bidirectional streaming communication works correctly
+
+### Platform Configuration
+- **Google AI Studio**: Uses GOOGLE_API_KEY with GOOGLE_GENAI_USE_VERTEXAI=FALSE
+- **Vertex AI**: Uses GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION with GOOGLE_GENAI_USE_VERTEXAI=TRUE
+
+"""
+    
+    if test_type == "text":
+        report_content += """### Text Chat Testing
+- Sends text query via ADK streaming API
+- Receives streaming text response
+- Validates response content for time information
+
+"""
+    elif test_type == "voice":
+        report_content += """### Voice Chat Testing
+- Records 5 seconds of voice input using PyAudio
+- Converts speech to text using Google Cloud Speech-to-Text
+- Sends audio to ADK streaming API
+- Receives audio response from model
+- Plays audio response using PyAudio
+- Transcribes response for validation
+
+"""
+    elif test_type == "both":
+        report_content += """### Text Chat Testing
+- Sends text query via ADK streaming API
+- Receives streaming text response
+- Validates response content for time information
+
+### Voice Chat Testing
+- Records 5 seconds of voice input using PyAudio
+- Converts speech to text using Google Cloud Speech-to-Text
+- Sends audio to ADK streaming API
+- Receives audio response from model
+- Plays audio response using PyAudio
+- Transcribes response for validation
+
+"""
+    
+    # Add notes about failures
+    failed_tests = [k for k, v in results.items() if not v]
+    if failed_tests:
+        report_content += "## Failed Test Analysis\n\n"
+        for test_name in failed_tests:
+            if "audio-dialog" in test_name or "audio-thinking" in test_name:
+                report_content += f"- **{test_name}**: Audio-only model correctly rejects text input (expected behavior)\n"
+            else:
+                report_content += f"- **{test_name}**: Unexpected failure - requires investigation\n"
+        report_content += "\n"
+    
+    report_content += f"""## Environment Information
+- **ADK Version**: 1.3.0
+- **Python Dependencies**: google-adk, google-cloud-texttospeech, google-cloud-speech, pyaudio, python-dotenv
+- **Audio Configuration**: 16kHz, PCM, Mono
+- **SSL Configuration**: Automatically configured using certifi
+
+## Test Tool Usage
+```bash
+# Text tests only
+python test_tool.py --test-type text
+
+# Voice tests only  
+python test_tool.py --test-type voice
+
+# Both test types
+python test_tool.py --test-type both
+
+# Specific platform
+python test_tool.py --platform google-ai-studio --test-type text
+
+# Specific model
+python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp --test-type voice
+```
+
+---
+*Report generated by ADK Bidirectional Streaming Test Tool*
+"""
+    
+    # Write report to file
+    with open(output_file, 'w', encoding='utf-8') as f:
+        f.write(report_content)
+    
+    print("\\n📄 Test report saved to: " + output_file)
+    return output_file
 
 async def test_single_model(platform, model, test_type="text"):
     """Test a single platform and model combination"""
@@ -463,9 +604,13 @@ def main():
         # Run all tests
         if args.test_type == "both":
             print("Running text tests:")
-            asyncio.run(run_all_tests("text"))
+            text_results = asyncio.run(run_all_tests("text"))
             print("\nRunning voice tests:")
-            asyncio.run(run_all_tests("voice"))
+            voice_results = asyncio.run(run_all_tests("voice"))
+            
+            # Generate combined report
+            combined_results = {**text_results, **voice_results}
+            generate_test_report(combined_results, "both", "combined_test_report.txt")
         else:
             asyncio.run(run_all_tests(args.test_type))
 

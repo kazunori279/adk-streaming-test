@@ -54,3 +54,6 @@ For each `Test cases` below, test the `Test functionality`:
 - Test functionality:
   - Text chat: ask "What time is it now?" and verify the agent responds with the time
   - Voice chat: ask "What time is it now?" with voice, and verify the agent responds with the time in voice.
+
+- Test report:
+  - Output a text file that summarizes the result of all test cases.
