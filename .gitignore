@@ -195,3 +195,7 @@ cython_debug/
 
 # Claude Code
 .mcp.json
+
+# Test Reports
+test_report.txt
+combined_test_report.txt
