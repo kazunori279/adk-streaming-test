@@ -14,10 +14,15 @@ Build a test tool for bidirectional streamping functionality with Google ADK (Ag
 
 ## Requirements
 
-- Reference: Use the GitHub MCP server to read the following resources on GitHub to learn how to use
-ADK and Bidi-streaming API:
-  - examples/python/snippets/streaming/adk-streaming/ from the google/adk-docs repository
-  - docs/streaming/custom-streaming.md from the google/adk-docs repository
+- Resources:
+  - GitHub resources: Use the GitHub MCP server to read the following resources on GitHub to learn how to use ADK and Bidi-streaming API:
+    - examples/python/snippets/streaming/adk-streaming/ from the google/adk-docs repository
+    - docs/streaming/custom-streaming.md from the google/adk-docs repository
+  - Text to speech: refer to the following page:
+    - https://cloud.google.com/text-to-speech/docs/libraries#client-libraries-install-python
+  - Speech to text: refer to the following page:
+    - https://cloud.google.com/speech-to-text/docs/speech-to-text-client-libraries
+
 - Environment:
   - Check if .env exists. If not, create one
   - Set SSL_CERT_FILE variable before running the server, as explained in the doc
@@ -48,3 +53,4 @@ For each `Test cases` below, test the `Test functionality`:
 
 - Test functionality:
   - Text chat: ask "What time is it now?" and verify the agent responds with the time
+  - Voice chat: ask "What time is it now?" with voice, and verify the agent responds with the time in voice.

@@ -10,11 +10,13 @@ import os
 import asyncio
 import argparse
 from dotenv import load_dotenv
-from google.genai.types import Content, Part
+from google.genai.types import Content, Part, Blob
 from google.adk.runners import InMemoryRunner
 from google.adk.agents import Agent, LiveRequestQueue
 from google.adk.agents.run_config import RunConfig
 from google.adk.tools import google_search
+from google.cloud import texttospeech, speech
+import pyaudio
 
 # Load environment variables
 load_dotenv()
@@ -31,6 +33,100 @@ VERTEX_AI_MODELS = [
     "gemini-2.0-flash-live-preview-04-09",
     "gemini-2.0-flash-exp"
 ]
+
+# Audio configuration
+AUDIO_FORMAT = pyaudio.paInt16
+CHANNELS = 1
+RATE = 16000
+CHUNK = 1024
+
+class VoiceHandler:
+    """Handles voice input/output using Google Cloud TTS and STT."""
+
+    def __init__(self):
+        self.tts_client = texttospeech.TextToSpeechClient()
+        self.stt_client = speech.SpeechClient()
+        self.pyaudio_instance = pyaudio.PyAudio()
+
+    def text_to_speech(self, text: str) -> bytes:
+        """Convert text to speech and return audio bytes."""
+        synthesis_input = texttospeech.SynthesisInput(text=text)
+
+        voice = texttospeech.VoiceSelectionParams(
+            language_code="en-US",
+            ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+        )
+
+        audio_config = texttospeech.AudioConfig(
+            audio_encoding=texttospeech.AudioEncoding.LINEAR16,
+            sample_rate_hertz=RATE
+        )
+
+        response = self.tts_client.synthesize_speech(
+            input=synthesis_input,
+            voice=voice,
+            audio_config=audio_config
+        )
+
+        return response.audio_content
+
+    def play_audio(self, audio_data: bytes):
+        """Play audio data through speakers."""
+        stream = self.pyaudio_instance.open(
+            format=AUDIO_FORMAT,
+            channels=CHANNELS,
+            rate=RATE,
+            output=True
+        )
+
+        stream.write(audio_data)
+        stream.stop_stream()
+        stream.close()
+
+    def record_audio(self, duration: int = 5) -> bytes:
+        """Record audio from microphone for specified duration."""
+        print(f"Recording for {duration} seconds... Speak now!")
+
+        stream = self.pyaudio_instance.open(
+            format=AUDIO_FORMAT,
+            channels=CHANNELS,
+            rate=RATE,
+            input=True,
+            frames_per_buffer=CHUNK
+        )
+
+        frames = []
+        for _ in range(0, int(RATE / CHUNK * duration)):
+            data = stream.read(CHUNK)
+            frames.append(data)
+
+        stream.stop_stream()
+        stream.close()
+
+        # Convert to bytes
+        audio_data = b''.join(frames)
+        return audio_data
+
+    def speech_to_text(self, audio_data: bytes) -> str:
+        """Convert speech audio to text."""
+        audio = speech.RecognitionAudio(content=audio_data)
+
+        config = speech.RecognitionConfig(
+            encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+            sample_rate_hertz=RATE,
+            language_code="en-US",
+        )
+
+        response = self.stt_client.recognize(config=config, audio=audio)
+
+        if response.results:
+            return response.results[0].alternatives[0].transcript
+        return ""
+
+    def __del__(self):
+        """Clean up PyAudio instance."""
+        if hasattr(self, 'pyaudio_instance'):
+            self.pyaudio_instance.terminate()
 
 class ADKStreamingTester:
     """ADK Streaming Test Class for testing bidirectional streaming functionality."""
@@ -152,25 +248,136 @@ class ADKStreamingTester:
             print(f"✗ Error: {str(exc)}")
             return False
 
-async def run_all_tests():
+    async def test_voice_chat(self):
+        """Test voice chat functionality with TTS/STT"""
+        print(f"\n{'='*60}")
+        print(f"Testing VOICE CHAT {self.platform} with model: {self.model}")
+        print(f"{'='*60}")
+
+        try:
+            # Set up environment
+            await self.setup_environment()
+
+            # Create agent session
+            await self.create_agent_session()
+
+            # Initialize voice handler
+            voice_handler = VoiceHandler()
+
+            # Create live request queue
+            live_request_queue = LiveRequestQueue()
+
+            # Set response modality to AUDIO
+            run_config = RunConfig(response_modalities=["AUDIO"])
+
+            # Start live session
+            live_events = self.runner.run_live(
+                session=self.session,
+                live_request_queue=live_request_queue,
+                run_config=run_config,
+            )
+
+            # Record voice input
+            print("Voice input required:")
+            audio_data = voice_handler.record_audio(duration=5)
+
+            # Convert speech to text for verification
+            question_text = voice_handler.speech_to_text(audio_data)
+            print(f"Recognized speech: '{question_text}'")
+
+            # Send audio to agent
+            blob = Blob(data=audio_data, mime_type="audio/pcm")
+            live_request_queue.send_realtime(blob)
+
+            print("Waiting for voice response...")
+
+            # Collect audio response
+            audio_response_data = b""
+            text_response = ""
+
+            async for event in live_events:
+                if event.turn_complete:
+                    break
+
+                if event.content and event.content.parts:
+                    part = event.content.parts[0]
+
+                    # Handle audio response
+                    if (part.inline_data and
+                        part.inline_data.mime_type and
+                        part.inline_data.mime_type.startswith("audio/")):
+                        audio_response_data += part.inline_data.data
+
+                    # Handle text response (for verification)
+                    elif part.text:
+                        text_response += part.text
+
+            # Close the request queue
+            live_request_queue.close()
+
+            # Play the audio response
+            if audio_response_data:
+                print("Playing voice response...")
+                voice_handler.play_audio(audio_response_data)
+
+                # Convert response audio to text for verification
+                response_text = voice_handler.speech_to_text(audio_response_data)
+                print(f"Voice response (transcribed): '{response_text}'")
+
+                # Verify response contains time information
+                verification_text = response_text or text_response
+                time_keywords = ["time", "clock", "hour", "minute", "am", "pm", "utc", "gmt"]
+                success = any(keyword in verification_text.lower() for keyword in time_keywords)
+            else:
+                print("No audio response received")
+                success = False
+
+            print("Test Result: PASS" if success else "Test Result: FAIL")
+            if success:
+                print("✓ Voice response contains time-related information")
+            else:
+                print("✗ Voice response does not contain expected time information")
+
+            return success
+
+        except Exception as exc:
+            print("Test Result: ERROR")
+            print(f"✗ Error: {str(exc)}")
+            return False
+
+async def run_all_tests(test_type="text"):
     """Run tests for all platform and model combinations"""
     results = {}
 
-    print("Starting ADK Bidirectional Streaming Tests")
+    print(f"Starting ADK Bidirectional Streaming Tests ({test_type.upper()})")
     print("=" * 60)
+
+    # Choose models based on test type
+    if test_type == "voice":
+        # Only test audio-capable models for voice tests
+        studio_models = ["gemini-2.0-flash-live-001",
+                        "gemini-2.5-flash-preview-native-audio-dialog",
+                        "gemini-2.5-flash-exp-native-audio-thinking-dialog"]
+        vertex_models = ["gemini-2.0-flash-live-preview-04-09"]
+    else:
+        studio_models = GOOGLE_AI_STUDIO_MODELS
+        vertex_models = VERTEX_AI_MODELS
 
     # Test Google AI Studio models
     print("\nTesting Google AI Studio Platform")
     print("-" * 40)
 
-    for model in GOOGLE_AI_STUDIO_MODELS:
+    for model in studio_models:
         tester = ADKStreamingTester("google-ai-studio", model)
         try:
-            success = await tester.test_text_chat()
-            results[f"google-ai-studio-{model}"] = success
+            if test_type == "voice":
+                success = await tester.test_voice_chat()
+            else:
+                success = await tester.test_text_chat()
+            results[f"google-ai-studio-{model}-{test_type}"] = success
         except Exception as exc:
             print(f"Failed to test {model}: {exc}")
-            results[f"google-ai-studio-{model}"] = False
+            results[f"google-ai-studio-{model}-{test_type}"] = False
 
         # Small delay between tests
         await asyncio.sleep(1)
@@ -179,14 +386,17 @@ async def run_all_tests():
     print("\nTesting Google Cloud Vertex AI Platform")
     print("-" * 40)
 
-    for model in VERTEX_AI_MODELS:
+    for model in vertex_models:
         tester = ADKStreamingTester("vertex-ai", model)
         try:
-            success = await tester.test_text_chat()
-            results[f"vertex-ai-{model}"] = success
+            if test_type == "voice":
+                success = await tester.test_voice_chat()
+            else:
+                success = await tester.test_text_chat()
+            results[f"vertex-ai-{model}-{test_type}"] = success
         except Exception as exc:
             print(f"Failed to test {model}: {exc}")
-            results[f"vertex-ai-{model}"] = False
+            results[f"vertex-ai-{model}-{test_type}"] = False
 
         # Small delay between tests
         await asyncio.sleep(1)
@@ -207,9 +417,11 @@ async def run_all_tests():
 
     return results
 
-async def test_single_model(platform, model):
+async def test_single_model(platform, model, test_type="text"):
     """Test a single platform and model combination"""
     tester = ADKStreamingTester(platform, model)
+    if test_type == "voice":
+        return await tester.test_voice_chat()
     return await tester.test_text_chat()
 
 def main():
@@ -222,6 +434,12 @@ def main():
         help="Platform to test"
     )
     parser.add_argument("--model", help="Specific model to test")
+    parser.add_argument(
+        "--test-type",
+        choices=["text", "voice", "both"],
+        default="text",
+        help="Type of test to run: text, voice, or both"
+    )
 
     args = parser.parse_args()
 
@@ -233,10 +451,23 @@ def main():
         if args.platform == "all":
             print("Error: Must specify platform when testing specific model")
             return
-        asyncio.run(test_single_model(args.platform, args.model))
+
+        if args.test_type == "both":
+            print("Testing text chat:")
+            asyncio.run(test_single_model(args.platform, args.model, "text"))
+            print("\nTesting voice chat:")
+            asyncio.run(test_single_model(args.platform, args.model, "voice"))
+        else:
+            asyncio.run(test_single_model(args.platform, args.model, args.test_type))
     else:
         # Run all tests
-        asyncio.run(run_all_tests())
+        if args.test_type == "both":
+            print("Running text tests:")
+            asyncio.run(run_all_tests("text"))
+            print("\nRunning voice tests:")
+            asyncio.run(run_all_tests("voice"))
+        else:
+            asyncio.run(run_all_tests(args.test_type))
 
 if __name__ == "__main__":
     main()
