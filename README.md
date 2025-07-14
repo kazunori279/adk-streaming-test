@@ -130,7 +130,7 @@ All tests use the standardized question: **"What time is it now?"**
 
 ## Test Reports
 
-The tool automatically generates comprehensive test reports (`test_report.txt`) including:
+The tool automatically generates comprehensive test reports (`test_report.md`) including:
 
 - **Test Summary**: Overall success rates and statistics
 - **Platform Breakdown**: Results by Google AI Studio vs Vertex AI

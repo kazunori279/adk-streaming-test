@@ -67,7 +67,7 @@ Development and testing commands for this ADK streaming test project:
 - **Run all tests (recommended)**: `python test_tool.py`
 - **Test specific platform**: `python test_tool.py --platform google-ai-studio`
 - **Test specific model**: `python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp`
-- **View test results**: Open generated `test_report.txt`
+- **View test results**: Open generated `test_report.md`
 
 ### Platform Configuration
 - **Google AI Studio**: Requires `GOOGLE_API_KEY` in `.env`, sets `GOOGLE_GENAI_USE_VERTEXAI=FALSE`
@@ -92,7 +92,7 @@ adk-streaming-test/
 ├── README.md             # Comprehensive project documentation
 ├── requirements.txt      # Python dependencies
 ├── test_tool.py          # Main ADK streaming test tool (755 lines)
-├── test_report.txt       # Generated test reports with detailed analytics
+├── test_report.md        # Generated test reports with detailed analytics
 ├── whattime.m4a          # Audio test file ("What time is it now?")
 └── LICENSE               # Project license
 ```
@@ -100,7 +100,7 @@ adk-streaming-test/
 ### File Details
 
 - **test_tool.py**: Comprehensive test framework with classes for streaming tests, voice handling, and report generation
-- **test_report.txt**: Auto-generated reports with success metrics, transcriptions, error traces, and methodology documentation
+- **test_report.md**: Auto-generated reports with success metrics, transcriptions, error traces, and methodology documentation
 - **.env**: Contains API keys and project configuration (not tracked in git)
 - **whattime.m4a**: M4A audio file used for voice testing, converted to PCM format during tests
 

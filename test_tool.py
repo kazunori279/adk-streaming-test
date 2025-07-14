@@ -652,7 +652,7 @@ def _generate_methodology_section() -> str:
 
 """
 
-def generate_test_report(results, test_type, output_file="test_report.txt", transcriptions=None, error_traces=None):
+def generate_test_report(results, test_type, output_file="test_report.md", transcriptions=None, error_traces=None):
     """Generate a comprehensive test report file for combined tests."""
     # Build report content using helper functions
     report_content = _generate_report_header(results)
