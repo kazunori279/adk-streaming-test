@@ -3,7 +3,8 @@
 ADK Bidirectional Streaming Test Tool
 
 Tests bidirectional streaming functionality with Google ADK using both
-Google AI Studio and Google Cloud Vertex AI platforms.
+Google AI Studio and Google Cloud Vertex AI platforms. Runs combined 
+text and voice tests for comprehensive evaluation.
 """
 
 import os
@@ -28,16 +29,18 @@ load_dotenv()
 class Config:
     """Application configuration"""
     # Model configurations
+
+    # Google AI Studio models: https://ai.google.dev/gemini-api/docs/models#live-api
     GOOGLE_AI_STUDIO_MODELS = [
+        "gemini-live-2.5-flash-preview",
         "gemini-2.0-flash-live-001",
-        "gemini-2.5-flash-preview-native-audio-dialog", 
-        "gemini-2.5-flash-exp-native-audio-thinking-dialog",
         "gemini-2.0-flash-exp"
     ]
     
+    # Vertex AI models: https://cloud.google.com/vertex-ai/generative-ai/docs/live-api
     VERTEX_AI_MODELS = [
-        "gemini-2.0-flash-live-preview-04-09",
-        "gemini-2.0-flash-exp"
+        "gemini-live-2.5-flash-preview-native-audio",
+        "gemini-2.0-flash-exp",
     ]
     
     # Audio configuration
@@ -179,10 +182,7 @@ class ADKStreamingTester:
             return success
             
         except Exception as exc:
-            import traceback
-            self.error_trace = traceback.format_exc()
-            self._print_test_error(str(exc))
-            return False
+            return self._handle_test_exception(exc)
     
     def _print_test_header(self, test_type: str):
         """Print test header."""
@@ -205,6 +205,13 @@ class ADKStreamingTester:
     def _verify_time_response(self, response: str) -> bool:
         """Verify if response contains time-related information."""
         return any(keyword in response.lower() for keyword in Config.TIME_KEYWORDS)
+    
+    def _handle_test_exception(self, exc: Exception) -> bool:
+        """Handle test exceptions consistently."""
+        import traceback
+        self.error_trace = traceback.format_exc()
+        self._print_test_error(str(exc))
+        return False
     
     async def _collect_text_response(self, live_events) -> str:
         """Collect text response from live events."""
@@ -268,10 +275,7 @@ class ADKStreamingTester:
             return success
             
         except Exception as exc:
-            import traceback
-            self.error_trace = traceback.format_exc()
-            self._print_test_error(str(exc))
-            return False
+            return self._handle_test_exception(exc)
     
     async def _collect_audio_response(self, live_events):
         """Collect audio response from live events."""
@@ -331,22 +335,10 @@ class ADKStreamingTester:
         verification_text = response_text or text_data
         return self._verify_time_response(verification_text)
 
-async def run_all_tests(test_type: str = "text") -> tuple[dict, dict]:
-    """Run tests for all platform and model combinations."""
-    print(f"Starting ADK Bidirectional Streaming Tests ({test_type.upper()})")
+async def run_all_tests() -> tuple[dict, dict, dict]:
+    """Run combined text and voice tests for all platform and model combinations."""
+    print("Starting ADK Bidirectional Streaming Tests (COMBINED)")
     print("=" * 60)
-    
-    # Select models based on test type
-    if test_type == "voice":
-        studio_models = ["gemini-2.0-flash-live-001",
-                        "gemini-2.5-flash-preview-native-audio-dialog", 
-                        "gemini-2.5-flash-exp-native-audio-thinking-dialog",
-                        "gemini-2.0-flash-exp"]
-        vertex_models = ["gemini-2.0-flash-live-preview-04-09",
-                        "gemini-2.0-flash-exp"]
-    else:
-        studio_models = Config.GOOGLE_AI_STUDIO_MODELS
-        vertex_models = Config.VERTEX_AI_MODELS
     
     results = {}
     transcriptions = {}
@@ -355,25 +347,63 @@ async def run_all_tests(test_type: str = "text") -> tuple[dict, dict]:
     # Test Google AI Studio
     print("\nTesting Google AI Studio Platform")
     print("-" * 40)
-    studio_results, studio_transcriptions, studio_errors = await _test_platform("google-ai-studio", studio_models, test_type)
-    results.update(studio_results)
-    transcriptions.update(studio_transcriptions)
-    error_traces.update(studio_errors)
+    
+    # Run both text and voice tests for Google AI Studio
+    studio_text_results, studio_text_transcriptions, studio_text_errors = await _test_platform(
+        "google-ai-studio", Config.GOOGLE_AI_STUDIO_MODELS, "text"
+    )
+    studio_voice_results, studio_voice_transcriptions, studio_voice_errors = await _test_platform(
+        "google-ai-studio", Config.GOOGLE_AI_STUDIO_MODELS, "voice"
+    )
+    
+    results.update(studio_text_results)
+    results.update(studio_voice_results)
+    transcriptions.update(studio_text_transcriptions)
+    transcriptions.update(studio_voice_transcriptions)
+    error_traces.update(studio_text_errors)
+    error_traces.update(studio_voice_errors)
     
     # Test Vertex AI
     print("\nTesting Google Cloud Vertex AI Platform") 
     print("-" * 40)
-    vertex_results, vertex_transcriptions, vertex_errors = await _test_platform("vertex-ai", vertex_models, test_type)
-    results.update(vertex_results)
-    transcriptions.update(vertex_transcriptions)
-    error_traces.update(vertex_errors)
     
-    # Print summary and generate report (only for individual test types)
+    # Run both text and voice tests for Vertex AI
+    vertex_text_results, vertex_text_transcriptions, vertex_text_errors = await _test_platform(
+        "vertex-ai", Config.VERTEX_AI_MODELS, "text"
+    )
+    vertex_voice_results, vertex_voice_transcriptions, vertex_voice_errors = await _test_platform(
+        "vertex-ai", Config.VERTEX_AI_MODELS, "voice"
+    )
+    
+    results.update(vertex_text_results)
+    results.update(vertex_voice_results)
+    transcriptions.update(vertex_text_transcriptions)
+    transcriptions.update(vertex_voice_transcriptions)
+    error_traces.update(vertex_text_errors)
+    error_traces.update(vertex_voice_errors)
+    
+    # Print summary and generate report
     _print_test_summary(results)
-    if test_type != "combined":  # Don't generate individual reports for combined runs
-        generate_test_report(results, test_type, transcriptions=transcriptions, error_traces=error_traces)
+    generate_test_report(results, "both", transcriptions=transcriptions, error_traces=error_traces)
     
     return results, transcriptions, error_traces
+
+def _handle_test_error(exc: Exception, platform: str, model: str, test_type: str) -> tuple[bool, str, str]:
+    """Handle test errors consistently."""
+    import traceback
+    print(f"Failed to test {model}: {exc}")
+    error_trace = traceback.format_exc()
+    transcription = f"Error: {str(exc)}" if test_type == "voice" else ""
+    return False, error_trace, transcription
+
+async def _run_single_test(tester: ADKStreamingTester, test_type: str) -> tuple[bool, str]:
+    """Run a single test and return success status and transcription."""
+    if test_type == "voice":
+        success = await tester.test_voice_chat()
+        return success, tester.transcription_result
+    else:
+        success = await tester.test_text_chat()
+        return success, ""
 
 async def _test_platform(platform: str, models: list, test_type: str) -> tuple[dict, dict, dict]:
     """Test all models for a specific platform."""
@@ -382,30 +412,69 @@ async def _test_platform(platform: str, models: list, test_type: str) -> tuple[d
     error_traces = {}
     
     for model in models:
+        test_key = f"{platform}-{model}-{test_type}"
         tester = ADKStreamingTester(platform, model)
+        
         try:
+            success, transcription = await _run_single_test(tester, test_type)
+            results[test_key] = success
+            
             if test_type == "voice":
-                success = await tester.test_voice_chat()
-                transcriptions[f"{platform}-{model}-{test_type}"] = tester.transcription_result
-            else:
-                success = await tester.test_text_chat()
-            results[f"{platform}-{model}-{test_type}"] = success
+                transcriptions[test_key] = transcription
             
             # Store error trace if there was an error during testing
             if tester.error_trace:
-                error_traces[f"{platform}-{model}-{test_type}"] = tester.error_trace
+                error_traces[test_key] = tester.error_trace
                 
         except Exception as exc:
-            import traceback
-            print(f"Failed to test {model}: {exc}")
-            results[f"{platform}-{model}-{test_type}"] = False
-            error_traces[f"{platform}-{model}-{test_type}"] = traceback.format_exc()
+            success, error_trace, transcription = _handle_test_error(exc, platform, model, test_type)
+            results[test_key] = success
+            error_traces[test_key] = error_trace
             if test_type == "voice":
-                transcriptions[f"{platform}-{model}-{test_type}"] = f"Error: {str(exc)}"
+                transcriptions[test_key] = transcription
         
         await asyncio.sleep(1)  # Brief delay between tests
     
     return results, transcriptions, error_traces
+
+def _parse_test_name(test_name: str) -> tuple[str, str, str]:
+    """Parse test name into platform, model, and test type.
+    
+    Args:
+        test_name: Format like "google-ai-studio-gemini-2.0-flash-live-001-text"
+        
+    Returns:
+        Tuple of (platform, model, test_type)
+    """
+    if "google-ai-studio" in test_name:
+        platform = "google-ai-studio"
+        model_and_type = test_name.replace("google-ai-studio-", "")
+    elif "vertex-ai" in test_name:
+        platform = "vertex-ai"
+        model_and_type = test_name.replace("vertex-ai-", "")
+    else:
+        return "", "", ""
+        
+    # Extract test type from the end
+    if model_and_type.endswith("-text"):
+        model = model_and_type.replace("-text", "")
+        test_type = "text"
+    elif model_and_type.endswith("-voice"):
+        model = model_and_type.replace("-voice", "")
+        test_type = "voice"
+    else:
+        model = model_and_type
+        test_type = ""
+        
+    return platform, model, test_type
+
+def _get_platform_display_name(platform: str) -> str:
+    """Get display name for platform."""
+    return "Google AI Studio" if platform == "google-ai-studio" else "Vertex AI"
+
+def _format_test_result(success: bool) -> tuple[str, str]:
+    """Format test result into icon and status."""
+    return ("✅", "PASS") if success else ("❌", "FAIL")
 
 def _print_test_summary(results: dict):
     """Print test summary."""
@@ -422,320 +491,25 @@ def _print_test_summary(results: dict):
     
     print(f"\nOverall: {passed_tests}/{total_tests} tests passed")
 
-def generate_test_report(results, test_type, output_file="test_report.txt", transcriptions=None, error_traces=None):
-    """Generate a comprehensive test report file"""
+def _generate_report_header(results: dict) -> str:
+    """Generate the header section of the test report."""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    # Get environment configuration
     google_project = os.getenv("GOOGLE_CLOUD_PROJECT", "Not configured")
     google_location = os.getenv("GOOGLE_CLOUD_LOCATION", "Not configured")
     adk_version = google.adk.__version__
     
-    report_content = f"""# ADK Bidirectional Streaming Test Report
-
-## Test Summary
-- **Test Date**: {timestamp}
-- **Test Type**: {test_type.upper()}
-- **Google ADK Version**: {adk_version}
-- **Total Tests**: {len(results)}
-- **Passed Tests**: {sum(1 for success in results.values() if success)}
-- **Failed Tests**: {sum(1 for success in results.values() if not success)}
-- **Success Rate**: {(sum(1 for success in results.values() if success) / len(results) * 100):.1f}%
-
-## Environment Configuration
-- **Google Cloud Project**: {google_project}
-- **Google Cloud Location**: {google_location}
-
-## Detailed Results
-
-"""
+    total_tests = len(results)
+    passed_tests = sum(1 for success in results.values() if success)
+    success_rate = (passed_tests / total_tests * 100) if total_tests > 0 else 0
     
-    # Group results by platform
-    google_ai_studio_results = {k: v for k, v in results.items() if "google-ai-studio" in k}
-    vertex_ai_results = {k: v for k, v in results.items() if "vertex-ai" in k}
-    
-    if google_ai_studio_results:
-        report_content += "### Google AI Studio Platform\n\n"
-        for test_name, success in google_ai_studio_results.items():
-            model = test_name.replace("google-ai-studio-", "").replace(f"-{test_type}", "")
-            status = "PASS" if success else "FAIL"
-            icon = "✅" if success else "❌"
-            report_content += f"- **{model} ({test_type})**: {icon} {status}\n"
-        report_content += "\n"
-    
-    if vertex_ai_results:
-        report_content += "### Vertex AI Platform\n\n"
-        for test_name, success in vertex_ai_results.items():
-            model = test_name.replace("vertex-ai-", "").replace(f"-{test_type}", "")
-            status = "PASS" if success else "FAIL"
-            icon = "✅" if success else "❌"
-            report_content += f"- **{model} ({test_type})**: {icon} {status}\n"
-        report_content += "\n"
-    
-    # Add voice transcription results if this is a voice test
-    if test_type == "voice" and transcriptions:
-        report_content += "## Voice Transcription Results\n\n"
-        
-        # Group transcriptions by platform
-        google_ai_transcriptions = {k: v for k, v in transcriptions.items() if "google-ai-studio" in k}
-        vertex_ai_transcriptions = {k: v for k, v in transcriptions.items() if "vertex-ai" in k}
-        
-        if google_ai_transcriptions:
-            report_content += "### Google AI Studio Platform\n\n"
-            for test_name, transcription in google_ai_transcriptions.items():
-                model = test_name.replace("google-ai-studio-", "").replace(f"-{test_type}", "")
-                report_content += f"**{model}**: \"{transcription}\"\n\n"
-        
-        if vertex_ai_transcriptions:
-            report_content += "### Vertex AI Platform\n\n"
-            for test_name, transcription in vertex_ai_transcriptions.items():
-                model = test_name.replace("vertex-ai-", "").replace(f"-{test_type}", "")
-                report_content += f"**{model}**: \"{transcription}\"\n\n"
-    
-    # Add error traces section if there are any errors
-    if error_traces:
-        report_content += "## Error Traces\n\n"
-        
-        # Group errors by platform
-        google_ai_errors = {k: v for k, v in error_traces.items() if "google-ai-studio" in k}
-        vertex_ai_errors = {k: v for k, v in error_traces.items() if "vertex-ai" in k}
-        
-        if google_ai_errors:
-            report_content += "### Google AI Studio Platform\n\n"
-            for test_name, error_trace in google_ai_errors.items():
-                # Extract model name and test type
-                if "google-ai-studio" in test_name:
-                    model_and_type = test_name.replace("google-ai-studio-", "")
-                    if model_and_type.endswith("-text"):
-                        model = model_and_type.replace("-text", "")
-                        test_type_display = "text"
-                    elif model_and_type.endswith("-voice"):
-                        model = model_and_type.replace("-voice", "")
-                        test_type_display = "voice"
-                    else:
-                        model = model_and_type
-                        test_type_display = "unknown"
-                    
-                    report_content += f"#### {model} ({test_type_display})\n\n"
-                    report_content += "```\n"
-                    report_content += error_trace
-                    report_content += "```\n\n"
-        
-        if vertex_ai_errors:
-            report_content += "### Vertex AI Platform\n\n"
-            for test_name, error_trace in vertex_ai_errors.items():
-                # Extract model name and test type
-                if "vertex-ai" in test_name:
-                    model_and_type = test_name.replace("vertex-ai-", "")
-                    if model_and_type.endswith("-text"):
-                        model = model_and_type.replace("-text", "")
-                        test_type_display = "text"
-                    elif model_and_type.endswith("-voice"):
-                        model = model_and_type.replace("-voice", "")
-                        test_type_display = "voice"
-                    else:
-                        model = model_and_type
-                        test_type_display = "unknown"
-                    
-                    report_content += f"#### {model} ({test_type_display})\n\n"
-                    report_content += "```\n"
-                    report_content += error_trace
-                    report_content += "```\n\n"
-    
-    # Add test methodology
-    report_content += """## Test Methodology
-
-### Test Question
-- **Query**: "What time is it now?"
-- **Expected Response**: Agent responds with current time information using Google Search tool
-
-### Success Criteria
-- Response contains time-related keywords (time, clock, hour, minute, am, pm, utc, gmt)
-- Agent successfully uses Google Search tool for real-time information
-- Bidirectional streaming communication works correctly
-
-### Platform Configuration
-- **Google AI Studio**: Uses GOOGLE_API_KEY with GOOGLE_GENAI_USE_VERTEXAI=FALSE
-- **Vertex AI**: Uses GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION with GOOGLE_GENAI_USE_VERTEXAI=TRUE
-
-"""
-    
-    if test_type == "text":
-        report_content += """### Text Chat Testing
-- Sends text query via ADK streaming API
-- Receives streaming text response
-- Validates response content for time information
-
-"""
-    elif test_type == "voice":
-        report_content += """### Voice Chat Testing
-- Generates voice input using Google Cloud Text-to-Speech
-- Sends audio to ADK streaming API
-- Receives audio response from model
-- Plays audio response using PyAudio
-- Transcribes response using Google Cloud Speech-to-Text for validation
-
-"""
-    elif test_type == "both":
-        report_content += """### Text Chat Testing
-- Sends text query via ADK streaming API
-- Receives streaming text response
-- Validates response content for time information
-
-### Voice Chat Testing
-- Generates voice input using Google Cloud Text-to-Speech
-- Sends audio to ADK streaming API
-- Receives audio response from model
-- Plays audio response using PyAudio
-- Transcribes response using Google Cloud Speech-to-Text for validation
-
-"""
-    
-    # Add notes about failures
-    failed_tests = [k for k, v in results.items() if not v]
-    if failed_tests:
-        report_content += "## Failed Test Analysis\n\n"
-        for test_name in failed_tests:
-            # Format the test name properly
-            if "google-ai-studio" in test_name:
-                model = test_name.replace("google-ai-studio-", "")
-            elif "vertex-ai" in test_name:
-                model = test_name.replace("vertex-ai-", "")
-            else:
-                model = test_name
-            
-            # Extract test type from the end
-            if model.endswith("-text"):
-                clean_model = model.replace("-text", "")
-                test_type_display = "text"
-            elif model.endswith("-voice"):
-                clean_model = model.replace("-voice", "")
-                test_type_display = "voice"
-            else:
-                clean_model = model
-                test_type_display = "unknown"
-            
-            formatted_name = f"{clean_model} ({test_type_display})"
-            
-            if "audio-dialog" in test_name or "audio-thinking" in test_name:
-                if "text" in test_name:
-                    report_content += f"- **{formatted_name}**: Audio-only model correctly rejects text input (expected behavior)\n"
-                else:
-                    report_content += f"- **{formatted_name}**: Unexpected failure - requires investigation\n"
-            else:
-                report_content += f"- **{formatted_name}**: Unexpected failure - requires investigation\n"
-        report_content += "\n"
-    
-    report_content += f"""## Environment Information
-- **ADK Version**: 1.3.0
-- **Python Dependencies**: google-adk, google-cloud-texttospeech, google-cloud-speech, pyaudio, python-dotenv
-- **Audio Configuration**: 16kHz, PCM, Mono
-- **SSL Configuration**: Automatically configured using certifi
-
-## Test Tool Usage
-```bash
-# Text tests only
-python test_tool.py --test-type text
-
-# Voice tests only  
-python test_tool.py --test-type voice
-
-# Both test types
-python test_tool.py --test-type both
-
-# Specific platform
-python test_tool.py --platform google-ai-studio --test-type text
-
-# Specific model
-python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp --test-type voice
-```
-
----
-*Report generated by ADK Bidirectional Streaming Test Tool*
-"""
-    
-    # Write report to file
-    with open(output_file, 'w', encoding='utf-8') as f:
-        f.write(report_content)
-    
-    print("\\n📄 Test report saved to: " + output_file)
-    return output_file
-
-async def test_single_model(platform: str, model: str, test_type: str = "text") -> bool:
-    """Test a single platform and model combination."""
-    tester = ADKStreamingTester(platform, model)
-    if test_type == "voice":
-        return await tester.test_voice_chat()
-    return await tester.test_text_chat()
-
-def main():
-    """Main entry point."""
-    parser = argparse.ArgumentParser(description="ADK Bidirectional Streaming Test Tool")
-    parser.add_argument("--platform", choices=["google-ai-studio", "vertex-ai", "all"], 
-                       default="all", help="Platform to test")
-    parser.add_argument("--model", help="Specific model to test")
-    parser.add_argument("--test-type", choices=["text", "voice", "both"], 
-                       default="text", help="Type of test to run")
-    
-    args = parser.parse_args()
-    
-    # Set SSL certificate file as required by ADK
-    os.environ["SSL_CERT_FILE"] = os.popen("python -m certifi").read().strip()
-    
-    if args.model:
-        _run_single_model_tests(args)
-    else:
-        _run_all_model_tests(args)
-
-def _run_single_model_tests(args):
-    """Run tests for a single model."""
-    if args.platform == "all":
-        print("Error: Must specify platform when testing specific model")
-        return
-    
-    if args.test_type == "both":
-        print("Testing text chat:")
-        asyncio.run(test_single_model(args.platform, args.model, "text"))
-        print("\nTesting voice chat:")
-        asyncio.run(test_single_model(args.platform, args.model, "voice"))
-    else:
-        asyncio.run(test_single_model(args.platform, args.model, args.test_type))
-
-def _run_all_model_tests(args):
-    """Run tests for all models."""
-    if args.test_type == "both":
-        print("Running text tests:")
-        text_results, text_transcriptions, text_errors = asyncio.run(run_all_tests("text"))
-        print("\nRunning voice tests:")
-        voice_results, voice_transcriptions, voice_errors = asyncio.run(run_all_tests("voice"))
-        
-        # Generate combined report with both test types
-        combined_errors = {**text_errors, **voice_errors}
-        _generate_combined_report(text_results, voice_results, voice_transcriptions, combined_errors)
-    else:
-        results, transcriptions, error_traces = asyncio.run(run_all_tests(args.test_type))
-
-def _generate_combined_report(text_results: dict, voice_results: dict, voice_transcriptions: dict, error_traces: dict):
-    """Generate a combined report for both text and voice tests."""
-    combined_results = {**text_results, **voice_results}
-    
-    # Generate the combined report
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    # Get environment configuration
-    google_project = os.getenv("GOOGLE_CLOUD_PROJECT", "Not configured")
-    google_location = os.getenv("GOOGLE_CLOUD_LOCATION", "Not configured")
-    adk_version = google.adk.__version__
-    
-    # Calculate statistics
-    total_tests = len(combined_results)
-    passed_tests = sum(1 for success in combined_results.values() if success)
-    text_tests = len(text_results)
+    text_results = {k: v for k, v in results.items() if k.endswith("-text")}
+    voice_results = {k: v for k, v in results.items() if k.endswith("-voice")}
     text_passed = sum(1 for success in text_results.values() if success)
-    voice_tests = len(voice_results)
     voice_passed = sum(1 for success in voice_results.values() if success)
+    text_rate = (text_passed / len(text_results) * 100) if text_results else 0
+    voice_rate = (voice_passed / len(voice_results) * 100) if voice_results else 0
     
-    report_content = f"""# ADK Bidirectional Streaming Test Report
+    return f"""# ADK Bidirectional Streaming Test Report
 
 ## Test Summary
 - **Test Date**: {timestamp}
@@ -744,11 +518,11 @@ def _generate_combined_report(text_results: dict, voice_results: dict, voice_tra
 - **Total Tests**: {total_tests}
 - **Passed Tests**: {passed_tests}
 - **Failed Tests**: {total_tests - passed_tests}
-- **Success Rate**: {(passed_tests / total_tests * 100):.1f}%
+- **Success Rate**: {success_rate:.1f}%
 
 ### Test Type Breakdown
-- **Text Tests**: {text_passed}/{text_tests} passed ({(text_passed / text_tests * 100):.1f}%)
-- **Voice Tests**: {voice_passed}/{voice_tests} passed ({(voice_passed / voice_tests * 100):.1f}%)
+- **Text Tests**: {text_passed}/{len(text_results)} passed ({text_rate:.1f}%)
+- **Voice Tests**: {voice_passed}/{len(voice_results)} passed ({voice_rate:.1f}%)
 
 ## Environment Configuration
 - **Google Cloud Project**: {google_project}
@@ -757,27 +531,16 @@ def _generate_combined_report(text_results: dict, voice_results: dict, voice_tra
 ## Detailed Results
 
 """
+
+def _generate_detailed_results(results: dict) -> str:
+    """Generate the detailed results section for combined tests."""
+    content = ""
     
-    # Group results by platform and model
+    # Group by platform and model for combined tests
     platforms = {}
-    for test_name, success in combined_results.items():
-        if "google-ai-studio" in test_name:
-            platform = "Google AI Studio"
-            model_and_type = test_name.replace("google-ai-studio-", "")
-        elif "vertex-ai" in test_name:
-            platform = "Vertex AI"
-            model_and_type = test_name.replace("vertex-ai-", "")
-        else:
-            continue
-            
-        # Extract model name and test type
-        if model_and_type.endswith("-text"):
-            model = model_and_type.replace("-text", "")
-            test_type = "text"
-        elif model_and_type.endswith("-voice"):
-            model = model_and_type.replace("-voice", "")
-            test_type = "voice"
-        else:
+    for test_name, success in results.items():
+        platform, model, current_test_type = _parse_test_name(test_name)
+        if not platform or not current_test_type:
             continue
             
         if platform not in platforms:
@@ -785,99 +548,81 @@ def _generate_combined_report(text_results: dict, voice_results: dict, voice_tra
         if model not in platforms[platform]:
             platforms[platform][model] = {}
             
-        platforms[platform][model][test_type] = success
+        platforms[platform][model][current_test_type] = success
     
     # Generate platform sections
     for platform, models in platforms.items():
-        report_content += f"### {platform}\n\n"
+        platform_name = _get_platform_display_name(platform)
+        content += f"### {platform_name}\n\n"
         for model, tests in models.items():
-            text_result = tests.get("text", None)
-            voice_result = tests.get("voice", None)
+            content += f"**{model}**:\n"
+            for test_t in ["text", "voice"]:
+                if test_t in tests:
+                    icon, status = _format_test_result(tests[test_t])
+                    content += f"  - {test_t.title()}: {icon} {status}\n"
+            content += "\n"
+        content += "\n"
+    
+    return content
+
+def _generate_transcription_results(transcriptions: dict) -> str:
+    """Generate voice transcription results section."""
+    if not transcriptions:
+        return ""
+        
+    content = "## Voice Transcription Results\n\n"
+    
+    # Group transcriptions by platform
+    platforms = {}
+    for test_name, transcription in transcriptions.items():
+        platform, model, _ = _parse_test_name(test_name)
+        if not platform:
+            continue
             
-            report_content += f"**{model}**:\n"
-            if text_result is not None:
-                icon = "✅" if text_result else "❌"
-                status = "PASS" if text_result else "FAIL"
-                report_content += f"  - Text: {icon} {status}\n"
-            if voice_result is not None:
-                icon = "✅" if voice_result else "❌"
-                status = "PASS" if voice_result else "FAIL"
-                report_content += f"  - Voice: {icon} {status}\n"
-            report_content += "\n"
-        report_content += "\n"
+        if platform not in platforms:
+            platforms[platform] = []
+        platforms[platform].append((model, transcription))
     
-    # Add voice transcription results
-    if voice_transcriptions:
-        report_content += "## Voice Transcription Results\n\n"
-        
-        # Group transcriptions by platform
-        google_ai_transcriptions = {k: v for k, v in voice_transcriptions.items() if "google-ai-studio" in k}
-        vertex_ai_transcriptions = {k: v for k, v in voice_transcriptions.items() if "vertex-ai" in k}
-        
-        if google_ai_transcriptions:
-            report_content += "### Google AI Studio Platform\n\n"
-            for test_name, transcription in google_ai_transcriptions.items():
-                model = test_name.replace("google-ai-studio-", "").replace("-voice", "")
-                report_content += f"**{model}**: \"{transcription}\"\n\n"
-        
-        if vertex_ai_transcriptions:
-            report_content += "### Vertex AI Platform\n\n"
-            for test_name, transcription in vertex_ai_transcriptions.items():
-                model = test_name.replace("vertex-ai-", "").replace("-voice", "")
-                report_content += f"**{model}**: \"{transcription}\"\n\n"
+    for platform, model_transcriptions in platforms.items():
+        platform_name = _get_platform_display_name(platform)
+        content += f"### {platform_name}\n\n"
+        for model, transcription in model_transcriptions:
+            content += f"**{model}**: \"{transcription}\"\n\n"
     
-    # Add error traces section if there are any errors
-    if error_traces:
-        report_content += "## Error Traces\n\n"
+    return content
+
+def _generate_error_traces(error_traces: dict) -> str:
+    """Generate error traces section."""
+    if not error_traces:
+        return ""
         
-        # Group errors by platform
-        google_ai_errors = {k: v for k, v in error_traces.items() if "google-ai-studio" in k}
-        vertex_ai_errors = {k: v for k, v in error_traces.items() if "vertex-ai" in k}
-        
-        if google_ai_errors:
-            report_content += "### Google AI Studio Platform\n\n"
-            for test_name, error_trace in google_ai_errors.items():
-                # Extract model name and test type
-                if "google-ai-studio" in test_name:
-                    model_and_type = test_name.replace("google-ai-studio-", "")
-                    if model_and_type.endswith("-text"):
-                        model = model_and_type.replace("-text", "")
-                        test_type_display = "text"
-                    elif model_and_type.endswith("-voice"):
-                        model = model_and_type.replace("-voice", "")
-                        test_type_display = "voice"
-                    else:
-                        model = model_and_type
-                        test_type_display = "unknown"
-                    
-                    report_content += f"#### {model} ({test_type_display})\n\n"
-                    report_content += "```\n"
-                    report_content += error_trace
-                    report_content += "```\n\n"
-        
-        if vertex_ai_errors:
-            report_content += "### Vertex AI Platform\n\n"
-            for test_name, error_trace in vertex_ai_errors.items():
-                # Extract model name and test type
-                if "vertex-ai" in test_name:
-                    model_and_type = test_name.replace("vertex-ai-", "")
-                    if model_and_type.endswith("-text"):
-                        model = model_and_type.replace("-text", "")
-                        test_type_display = "text"
-                    elif model_and_type.endswith("-voice"):
-                        model = model_and_type.replace("-voice", "")
-                        test_type_display = "voice"
-                    else:
-                        model = model_and_type
-                        test_type_display = "unknown"
-                    
-                    report_content += f"#### {model} ({test_type_display})\n\n"
-                    report_content += "```\n"
-                    report_content += error_trace
-                    report_content += "```\n\n"
+    content = "## Error Traces\n\n"
     
-    # Add methodology and other sections
-    report_content += """## Test Methodology
+    # Group errors by platform
+    platforms = {}
+    for test_name, error_trace in error_traces.items():
+        platform, model, test_type = _parse_test_name(test_name)
+        if not platform:
+            continue
+            
+        if platform not in platforms:
+            platforms[platform] = []
+        platforms[platform].append((model, test_type, error_trace))
+    
+    for platform, model_errors in platforms.items():
+        platform_name = _get_platform_display_name(platform)
+        content += f"### {platform_name}\n\n"
+        for model, test_type, error_trace in model_errors:
+            content += f"#### {model} ({test_type})\n\n"
+            content += "```\n"
+            content += error_trace
+            content += "```\n\n"
+    
+    return content
+
+def _generate_methodology_section() -> str:
+    """Generate test methodology section."""
+    return """## Test Methodology
 
 ### Test Question
 - **Query**: "What time is it now?"
@@ -905,48 +650,107 @@ def _generate_combined_report(text_results: dict, voice_results: dict, voice_tra
 - Plays audio response using PyAudio
 - Transcribes response using Google Cloud Speech-to-Text for validation
 
-## Environment Information
-- **ADK Version**: 1.3.0
+"""
+
+def generate_test_report(results, test_type, output_file="test_report.txt", transcriptions=None, error_traces=None):
+    """Generate a comprehensive test report file for combined tests."""
+    # Build report content using helper functions
+    report_content = _generate_report_header(results)
+    report_content += _generate_detailed_results(results)
+    report_content += _generate_transcription_results(transcriptions or {})
+    report_content += _generate_error_traces(error_traces or {})
+    report_content += _generate_methodology_section()
+    
+    # Add failed test analysis
+    failed_tests = [k for k, v in results.items() if not v]
+    if failed_tests:
+        report_content += "## Failed Test Analysis\n\n"
+        for test_name in failed_tests:
+            platform, model, test_type_display = _parse_test_name(test_name)
+            formatted_name = f"{model} ({test_type_display})"
+            
+            if "audio-dialog" in test_name or "audio-thinking" in test_name:
+                if "text" in test_name:
+                    report_content += f"- **{formatted_name}**: Audio-only model correctly rejects text input (expected behavior)\n"
+                else:
+                    report_content += f"- **{formatted_name}**: Unexpected failure - requires investigation\n"
+            else:
+                report_content += f"- **{formatted_name}**: Unexpected failure - requires investigation\n"
+        report_content += "\n"
+    
+    # Add environment and usage information
+    adk_version = google.adk.__version__
+    report_content += f"""## Environment Information
+- **ADK Version**: {adk_version}
 - **Python Dependencies**: google-adk, google-cloud-speech, pyaudio, pydub, python-dotenv
 - **Audio Configuration**: Input 16kHz, Output 24kHz, PCM, Mono
 - **SSL Configuration**: Automatically configured using certifi
 
 ## Test Tool Usage
 ```bash
-# Text tests only
-python test_tool.py --test-type text
+# Run all tests (combined text and voice)
+python test_tool.py
 
-# Voice tests only  
-python test_tool.py --test-type voice
+# Test specific platform only
+python test_tool.py --platform google-ai-studio
 
-# Both test types (generates this combined report)
-python test_tool.py --test-type both
-
-# Specific platform
-python test_tool.py --platform google-ai-studio --test-type text
-
-# Specific model
-python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp --test-type voice
+# Test specific model
+python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp
 ```
 
 ---
 *Report generated by ADK Bidirectional Streaming Test Tool*
 """
     
-    # Write combined report
-    output_file = "combined_test_report.txt"
+    # Write report to file
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(report_content)
     
-    print(f"\n📄 Combined test report saved to: {output_file}")
+    print(f"\n📄 Test report saved to: {output_file}")
+    return output_file
+
+async def test_single_model_combined(platform: str, model: str) -> tuple[bool, bool]:
+    """Test a single platform and model combination with both text and voice tests."""
+    tester = ADKStreamingTester(platform, model)
     
-    # Print summary
-    print(f"\n{'='*60}")
-    print("COMBINED TEST SUMMARY")
-    print(f"{'='*60}")
-    print(f"Text Tests: {text_passed}/{text_tests} passed ({(text_passed / text_tests * 100):.1f}%)")
-    print(f"Voice Tests: {voice_passed}/{voice_tests} passed ({(voice_passed / voice_tests * 100):.1f}%)")
-    print(f"Overall: {passed_tests}/{total_tests} tests passed ({(passed_tests / total_tests * 100):.1f}%)")
+    print(f"Testing text chat for {model}:")
+    text_success = await tester.test_text_chat()
+    
+    print(f"\nTesting voice chat for {model}:")
+    voice_success = await tester.test_voice_chat()
+    
+    return text_success, voice_success
+
+def main():
+    """Main entry point."""
+    parser = argparse.ArgumentParser(description="ADK Bidirectional Streaming Test Tool - Combined Text and Voice Testing")
+    parser.add_argument("--platform", choices=["google-ai-studio", "vertex-ai", "all"], 
+                       default="all", help="Platform to test")
+    parser.add_argument("--model", help="Specific model to test")
+    
+    args = parser.parse_args()
+    
+    # Set SSL certificate file as required by ADK
+    os.environ["SSL_CERT_FILE"] = os.popen("python -m certifi").read().strip()
+    
+    if args.model:
+        _run_single_model_tests(args)
+    else:
+        _run_all_model_tests(args)
+
+def _run_single_model_tests(args):
+    """Run combined tests for a single model."""
+    if args.platform == "all":
+        print("Error: Must specify platform when testing specific model")
+        return
+    
+    print("Running combined text and voice tests:")
+    asyncio.run(test_single_model_combined(args.platform, args.model))
+
+def _run_all_model_tests(args):
+    """Run combined tests for all models."""
+    results, transcriptions, error_traces = asyncio.run(run_all_tests())
+
 
 if __name__ == "__main__":
     main()
