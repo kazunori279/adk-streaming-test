@@ -112,9 +112,10 @@ class VoiceHandler:
 class ADKStreamingTester:
     """Tests ADK bidirectional streaming functionality."""
 
-    def __init__(self, platform: str, model: str):
+    def __init__(self, platform: str, model: str, region: str = None):
         self.platform = platform
         self.model = model
+        self.region = region
         self.runner = None
         self.session = None
         self.transcription_result = ""  # Store transcription for reporting
@@ -128,8 +129,16 @@ class ADKStreamingTester:
                 raise ValueError("GOOGLE_API_KEY not found in environment")
         else:  # vertex-ai
             os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "TRUE"
-            if not (os.getenv("GOOGLE_CLOUD_PROJECT") and os.getenv("GOOGLE_CLOUD_LOCATION")):
-                raise ValueError("GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION required for Vertex AI")
+            if not os.getenv("GOOGLE_CLOUD_PROJECT"):
+                raise ValueError("GOOGLE_CLOUD_PROJECT required for Vertex AI")
+            
+            # Use provided region or fall back to environment variable or default
+            if self.region:
+                os.environ["GOOGLE_CLOUD_LOCATION"] = self.region
+                print(f"Using region: {self.region}")
+            elif not os.getenv("GOOGLE_CLOUD_LOCATION"):
+                os.environ["GOOGLE_CLOUD_LOCATION"] = "us-central1"
+                print("Using default region: us-central1")
 
     async def create_agent_session(self):
         """Create ADK agent and session."""
@@ -335,7 +344,7 @@ class ADKStreamingTester:
         verification_text = response_text or text_data
         return self._verify_time_response(verification_text)
 
-async def run_all_tests() -> tuple[dict, dict, dict]:
+async def run_all_tests(region: str = None) -> tuple[dict, dict, dict]:
     """Run combined text and voice tests for all platform and model combinations."""
     print("Starting ADK Bidirectional Streaming Tests (COMBINED)")
     print("=" * 60)
@@ -350,10 +359,10 @@ async def run_all_tests() -> tuple[dict, dict, dict]:
     
     # Run both text and voice tests for Google AI Studio
     studio_text_results, studio_text_transcriptions, studio_text_errors = await _test_platform(
-        "google-ai-studio", Config.GOOGLE_AI_STUDIO_MODELS, "text"
+        "google-ai-studio", Config.GOOGLE_AI_STUDIO_MODELS, "text", region
     )
     studio_voice_results, studio_voice_transcriptions, studio_voice_errors = await _test_platform(
-        "google-ai-studio", Config.GOOGLE_AI_STUDIO_MODELS, "voice"
+        "google-ai-studio", Config.GOOGLE_AI_STUDIO_MODELS, "voice", region
     )
     
     results.update(studio_text_results)
@@ -369,10 +378,10 @@ async def run_all_tests() -> tuple[dict, dict, dict]:
     
     # Run both text and voice tests for Vertex AI
     vertex_text_results, vertex_text_transcriptions, vertex_text_errors = await _test_platform(
-        "vertex-ai", Config.VERTEX_AI_MODELS, "text"
+        "vertex-ai", Config.VERTEX_AI_MODELS, "text", region
     )
     vertex_voice_results, vertex_voice_transcriptions, vertex_voice_errors = await _test_platform(
-        "vertex-ai", Config.VERTEX_AI_MODELS, "voice"
+        "vertex-ai", Config.VERTEX_AI_MODELS, "voice", region
     )
     
     results.update(vertex_text_results)
@@ -384,7 +393,9 @@ async def run_all_tests() -> tuple[dict, dict, dict]:
     
     # Print summary and generate report
     _print_test_summary(results)
-    generate_test_report(results, "both", transcriptions=transcriptions, error_traces=error_traces)
+    report_filename = _generate_report_filename(region)
+    generate_test_report(results, "both", output_file=report_filename, transcriptions=transcriptions, error_traces=error_traces)
+    print(f"\nTest report generated: {report_filename}")
     
     return results, transcriptions, error_traces
 
@@ -405,7 +416,7 @@ async def _run_single_test(tester: ADKStreamingTester, test_type: str) -> tuple[
         success = await tester.test_text_chat()
         return success, ""
 
-async def _test_platform(platform: str, models: list, test_type: str) -> tuple[dict, dict, dict]:
+async def _test_platform(platform: str, models: list, test_type: str, region: str = None) -> tuple[dict, dict, dict]:
     """Test all models for a specific platform."""
     results = {}
     transcriptions = {}
@@ -413,7 +424,7 @@ async def _test_platform(platform: str, models: list, test_type: str) -> tuple[d
     
     for model in models:
         test_key = f"{platform}-{model}-{test_type}"
-        tester = ADKStreamingTester(platform, model)
+        tester = ADKStreamingTester(platform, model, region)
         
         try:
             success, transcription = await _run_single_test(tester, test_type)
@@ -652,6 +663,21 @@ def _generate_methodology_section() -> str:
 
 """
 
+def _generate_report_filename(region: str = None) -> str:
+    """Generate report filename with region and timestamp suffix."""
+    from datetime import datetime
+    import os
+    
+    # Get current region from environment if not provided
+    if not region:
+        region = os.getenv("GOOGLE_CLOUD_LOCATION", "unknown")
+    
+    # Generate timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    # Create filename with region and timestamp
+    return f"test_report_{region}_{timestamp}.md"
+
 def generate_test_report(results, test_type, output_file="test_report.md", transcriptions=None, error_traces=None):
     """Generate a comprehensive test report file for combined tests."""
     # Build report content using helper functions
@@ -696,6 +722,12 @@ python test_tool.py --platform google-ai-studio
 
 # Test specific model
 python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp
+
+# Test with specific region
+python test_tool.py --platform vertex-ai --region us-west1
+
+# Test specific model in specific region
+python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp --region europe-west1
 ```
 
 ---
@@ -709,9 +741,9 @@ python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp
     print(f"\n📄 Test report saved to: {output_file}")
     return output_file
 
-async def test_single_model_combined(platform: str, model: str) -> tuple[bool, bool]:
+async def test_single_model_combined(platform: str, model: str, region: str = None) -> tuple[bool, bool]:
     """Test a single platform and model combination with both text and voice tests."""
-    tester = ADKStreamingTester(platform, model)
+    tester = ADKStreamingTester(platform, model, region)
     
     print(f"Testing text chat for {model}:")
     text_success = await tester.test_text_chat()
@@ -727,6 +759,7 @@ def main():
     parser.add_argument("--platform", choices=["google-ai-studio", "vertex-ai", "all"], 
                        default="all", help="Platform to test")
     parser.add_argument("--model", help="Specific model to test")
+    parser.add_argument("--region", help="Google Cloud region to use (overrides GOOGLE_CLOUD_LOCATION env var)")
     
     args = parser.parse_args()
     
@@ -745,11 +778,11 @@ def _run_single_model_tests(args):
         return
     
     print("Running combined text and voice tests:")
-    asyncio.run(test_single_model_combined(args.platform, args.model))
+    asyncio.run(test_single_model_combined(args.platform, args.model, args.region))
 
 def _run_all_model_tests(args):
     """Run combined tests for all models."""
-    results, transcriptions, error_traces = asyncio.run(run_all_tests())
+    results, transcriptions, error_traces = asyncio.run(run_all_tests(args.region))
 
 
 if __name__ == "__main__":
