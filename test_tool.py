@@ -136,7 +136,9 @@ class ADKStreamingTester:
             if self.region:
                 os.environ["GOOGLE_CLOUD_LOCATION"] = self.region
                 print(f"Using region: {self.region}")
-            elif not os.getenv("GOOGLE_CLOUD_LOCATION"):
+            elif os.getenv("GOOGLE_CLOUD_LOCATION"):
+                print(f"Using region from environment: {os.getenv('GOOGLE_CLOUD_LOCATION')}")
+            else:
                 os.environ["GOOGLE_CLOUD_LOCATION"] = "us-central1"
                 print("Using default region: us-central1")
 

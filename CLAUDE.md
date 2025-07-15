@@ -67,11 +67,14 @@ Development and testing commands for this ADK streaming test project:
 - **Run all tests (recommended)**: `python test_tool.py`
 - **Test specific platform**: `python test_tool.py --platform google-ai-studio`
 - **Test specific model**: `python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp`
-- **View test results**: Open generated `test_report.md`
+- **Test with specific region**: `python test_tool.py --platform vertex-ai --region europe-west1`
+- **Test specific model in region**: `python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp --region us-west1`
+- **View test results**: Open generated timestamped report files
 
 ### Platform Configuration
 - **Google AI Studio**: Requires `GOOGLE_API_KEY` in `.env`, sets `GOOGLE_GENAI_USE_VERTEXAI=FALSE`
-- **Vertex AI**: Requires `GOOGLE_CLOUD_PROJECT` and `GOOGLE_CLOUD_LOCATION` in `.env`, sets `GOOGLE_GENAI_USE_VERTEXAI=TRUE`
+- **Vertex AI**: Requires `GOOGLE_CLOUD_PROJECT` in `.env`, sets `GOOGLE_GENAI_USE_VERTEXAI=TRUE`
+  - **Region Priority**: CLI `--region` parameter > `GOOGLE_CLOUD_LOCATION` env var > `us-central1` default
 
 ## MCP Configuration
 
@@ -92,7 +95,7 @@ adk-streaming-test/
 ├── README.md             # Comprehensive project documentation
 ├── requirements.txt      # Python dependencies
 ├── test_tool.py          # Main ADK streaming test tool (755 lines)
-├── test_report.md        # Generated test reports with detailed analytics
+├── test_report_*.md      # Generated test reports with region and timestamp
 ├── whattime.m4a          # Audio test file ("What time is it now?")
 └── LICENSE               # Project license
 ```
@@ -100,7 +103,7 @@ adk-streaming-test/
 ### File Details
 
 - **test_tool.py**: Comprehensive test framework with classes for streaming tests, voice handling, and report generation
-- **test_report.md**: Auto-generated reports with success metrics, transcriptions, error traces, and methodology documentation
+- **test_report_*.md**: Auto-generated reports with success metrics, transcriptions, error traces, and methodology documentation (format: `test_report_{region}_{timestamp}.md`)
 - **.env**: Contains API keys and project configuration (not tracked in git)
 - **whattime.m4a**: M4A audio file used for voice testing, converted to PCM format during tests
 

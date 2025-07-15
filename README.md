@@ -70,7 +70,7 @@ Key dependencies:
    
    # For Vertex AI
    GOOGLE_CLOUD_PROJECT=your_project_id
-   GOOGLE_CLOUD_LOCATION=us-central1
+   GOOGLE_CLOUD_LOCATION=us-central1  # Optional: defaults to us-central1 if not set
    ```
 
 2. **SSL Configuration**:
@@ -103,6 +103,17 @@ python test_tool.py --platform google-ai-studio --model gemini-2.0-flash-live-00
 python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp
 ```
 
+### Region-Specific Testing
+```bash
+# Test with specific region (overrides GOOGLE_CLOUD_LOCATION env var)
+python test_tool.py --platform vertex-ai --region europe-west1
+
+# Test specific model in specific region
+python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp --region us-west1
+
+# Region priority: --region parameter > GOOGLE_CLOUD_LOCATION env var > us-central1 default
+```
+
 ## Test Methodology
 
 ### Test Question
@@ -130,7 +141,7 @@ All tests use the standardized question: **"What time is it now?"**
 
 ## Test Reports
 
-The tool automatically generates comprehensive test reports (`test_report.md`) including:
+The tool automatically generates comprehensive test reports with timestamped filenames (`test_report_{region}_{timestamp}.md`) including:
 
 - **Test Summary**: Overall success rates and statistics
 - **Platform Breakdown**: Results by Google AI Studio vs Vertex AI
