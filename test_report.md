@@ -1,17 +1,17 @@
 # ADK Bidirectional Streaming Test Report
 
 ## Test Summary
-- **Test Date**: 2025-07-14 11:26:06
+- **Test Date**: 2025-10-01 11:43:27
 - **Test Type**: COMBINED (Text + Voice)
-- **Google ADK Version**: 1.6.1
-- **Total Tests**: 10
-- **Passed Tests**: 9
-- **Failed Tests**: 1
-- **Success Rate**: 90.0%
+- **Google ADK Version**: 1.8.0
+- **Total Tests**: 18
+- **Passed Tests**: 13
+- **Failed Tests**: 5
+- **Success Rate**: 72.2%
 
 ### Test Type Breakdown
-- **Text Tests**: 4/5 passed (80.0%)
-- **Voice Tests**: 5/5 passed (100.0%)
+- **Text Tests**: 4/9 passed (44.4%)
+- **Voice Tests**: 9/9 passed (100.0%)
 
 ## Environment Configuration
 - **Google Cloud Project**: gcp-samples-ic0
@@ -21,7 +21,7 @@
 
 ### Google AI Studio
 
-**gemini-live-2.5-flash-preview**:
+**gemini-2.0-flash-exp**:
   - Text: ✅ PASS
   - Voice: ✅ PASS
 
@@ -29,19 +29,35 @@
   - Text: ✅ PASS
   - Voice: ✅ PASS
 
-**gemini-2.0-flash-exp**:
+**gemini-live-2.5-flash-preview**:
   - Text: ✅ PASS
+  - Voice: ✅ PASS
+
+**gemini-2.5-flash-native-audio-preview-09-2025**:
+  - Text: ❌ FAIL
+  - Voice: ✅ PASS
+
+**gemini-2.5-flash-preview-native-audio-dialog**:
+  - Text: ❌ FAIL
+  - Voice: ✅ PASS
+
+**gemini-2.5-flash-exp-native-audio-thinking-dialog**:
+  - Text: ❌ FAIL
   - Voice: ✅ PASS
 
 
 ### Vertex AI
 
+**gemini-2.0-flash-exp**:
+  - Text: ✅ PASS
+  - Voice: ✅ PASS
+
 **gemini-live-2.5-flash-preview-native-audio**:
   - Text: ❌ FAIL
   - Voice: ✅ PASS
 
-**gemini-2.0-flash-exp**:
-  - Text: ✅ PASS
+**gemini-live-2.5-flash-preview-native-audio-09-17**:
+  - Text: ❌ FAIL
   - Voice: ✅ PASS
 
 
@@ -49,19 +65,146 @@
 
 ### Google AI Studio
 
-**gemini-live-2.5-flash-preview**: "the current time in Tokyo Japan is 11:24 a.m. on Monday July 14th 2025 Tokyo observes Japan Standard time jst which is UTC GMT + 9 hours"
+**gemini-2.0-flash-exp**: "it is currently 11:40 a.m. in Tokyo Japan"
 
-**gemini-2.0-flash-live-001**: "it is currently 11:25 a.m. in Tokyo Japan"
+**gemini-2.0-flash-live-001**: "it is currently 11:40 a.m. in Tokyo Japan"
 
-**gemini-2.0-flash-exp**: "it is 11:25 a.m. in Tokyo Japan"
+**gemini-live-2.5-flash-preview**: "the current time in Tokyo Japan is 11:40 a.m. on Wednesday October 1 2025 Tokyo observes Japan Standard time jst which is UTC GMT +9 hours and does not currently use daylight saving time"
+
+**gemini-2.5-flash-native-audio-preview-09-2025**: "the current time in Tokyo Japan is 11:41 a.m."
+
+**gemini-2.5-flash-preview-native-audio-dialog**: "the current time in Tokyo Japan is 11:41 a.m."
+
+**gemini-2.5-flash-exp-native-audio-thinking-dialog**: "the current time in Tokyo is 11:42 a.m."
 
 ### Vertex AI
 
-**gemini-live-2.5-flash-preview-native-audio**: "it is 11:25 a.m. in Tokyo right now"
+**gemini-2.0-flash-exp**: "it is 11:42 a.m. in Tokyo Japan"
 
-**gemini-2.0-flash-exp**: "it is 11:25 a.m. in Tokyo Japan"
+**gemini-live-2.5-flash-preview-native-audio**: "the current time in Tokyo Japan is 11:43 a.m."
+
+**gemini-live-2.5-flash-preview-native-audio-09-17**: "the current time in Tokyo Japan is 11:43 a.m."
 
 ## Error Traces
+
+### Google AI Studio
+
+#### gemini-2.5-flash-native-audio-preview-09-2025 (text)
+
+```
+Traceback (most recent call last):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 191, in test_text_chat
+    full_response = await self._collect_text_response(live_events)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 234, in _collect_text_response
+    async for event in live_events:
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 441, in run_live
+    async for event in self._exec_with_plugin(
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 273, in _exec_with_plugin
+    async for event in execute_fn(invocation_context):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 438, in execute
+    async for event in ctx.agent.run_live(ctx):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 240, in run_live
+    async for event in self._run_live_impl(ctx):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 291, in _run_live_impl
+    async for event in self._llm_flow.run_live(ctx):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 89, in run_live
+    async with llm.connect(llm_request) as llm_connection:
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 268, in connect
+    async with self._live_api_client.aio.live.connect(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/genai/live.py", line 1056, in connect
+    logger.info(await ws.recv(decode=False))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: received 1007 (invalid frame payload data) Cannot extract voices from a non-audio request.; then sent 1007 (invalid frame payload data) Cannot extract voices from a non-audio request.
+```
+
+#### gemini-2.5-flash-preview-native-audio-dialog (text)
+
+```
+Traceback (most recent call last):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 191, in test_text_chat
+    full_response = await self._collect_text_response(live_events)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 234, in _collect_text_response
+    async for event in live_events:
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 441, in run_live
+    async for event in self._exec_with_plugin(
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 273, in _exec_with_plugin
+    async for event in execute_fn(invocation_context):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 438, in execute
+    async for event in ctx.agent.run_live(ctx):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 240, in run_live
+    async for event in self._run_live_impl(ctx):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 291, in _run_live_impl
+    async for event in self._llm_flow.run_live(ctx):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 89, in run_live
+    async with llm.connect(llm_request) as llm_connection:
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 268, in connect
+    async with self._live_api_client.aio.live.connect(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/genai/live.py", line 1056, in connect
+    logger.info(await ws.recv(decode=False))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: received 1007 (invalid frame payload data) Cannot extract voices from a non-audio request.; then sent 1007 (invalid frame payload data) Cannot extract voices from a non-audio request.
+```
+
+#### gemini-2.5-flash-exp-native-audio-thinking-dialog (text)
+
+```
+Traceback (most recent call last):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 191, in test_text_chat
+    full_response = await self._collect_text_response(live_events)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 234, in _collect_text_response
+    async for event in live_events:
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 441, in run_live
+    async for event in self._exec_with_plugin(
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 273, in _exec_with_plugin
+    async for event in execute_fn(invocation_context):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 438, in execute
+    async for event in ctx.agent.run_live(ctx):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 240, in run_live
+    async for event in self._run_live_impl(ctx):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 291, in _run_live_impl
+    async for event in self._llm_flow.run_live(ctx):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 89, in run_live
+    async with llm.connect(llm_request) as llm_connection:
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 268, in connect
+    async with self._live_api_client.aio.live.connect(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/genai/live.py", line 1056, in connect
+    logger.info(await ws.recv(decode=False))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: received 1007 (invalid frame payload data) Cannot extract voices from a non-audio request.; then sent 1007 (invalid frame payload data) Cannot extract voices from a non-audio request.
+```
 
 ### Vertex AI
 
@@ -69,24 +212,67 @@
 
 ```
 Traceback (most recent call last):
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 176, in test_text_chat
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 191, in test_text_chat
     full_response = await self._collect_text_response(live_events)
                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 219, in _collect_text_response
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 234, in _collect_text_response
     async for event in live_events:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 348, in run_live
-    async for event in invocation_context.agent.run_live(invocation_context):
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 228, in run_live
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 441, in run_live
+    async for event in self._exec_with_plugin(
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 273, in _exec_with_plugin
+    async for event in execute_fn(invocation_context):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 438, in execute
+    async for event in ctx.agent.run_live(ctx):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 240, in run_live
     async for event in self._run_live_impl(ctx):
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 283, in _run_live_impl
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 291, in _run_live_impl
     async for event in self._llm_flow.run_live(ctx):
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 88, in run_live
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 89, in run_live
     async with llm.connect(llm_request) as llm_connection:
                ^^^^^^^^^^^^^^^^^^^^^^^^
   File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
     return await anext(self.gen)
            ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 260, in connect
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 268, in connect
+    async with self._live_api_client.aio.live.connect(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/genai/live.py", line 1056, in connect
+    logger.info(await ws.recv(decode=False))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+    raise self.protocol.close_exc from self.recv_exc
+websockets.exceptions.ConnectionClosedError: received 1007 (invalid frame payload data) Request contains an invalid argument.; then sent 1007 (invalid frame payload data) Request contains an invalid argument.
+```
+
+#### gemini-live-2.5-flash-preview-native-audio-09-17 (text)
+
+```
+Traceback (most recent call last):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 191, in test_text_chat
+    full_response = await self._collect_text_response(live_events)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 234, in _collect_text_response
+    async for event in live_events:
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 441, in run_live
+    async for event in self._exec_with_plugin(
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 273, in _exec_with_plugin
+    async for event in execute_fn(invocation_context):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 438, in execute
+    async for event in ctx.agent.run_live(ctx):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 240, in run_live
+    async for event in self._run_live_impl(ctx):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 291, in _run_live_impl
+    async for event in self._llm_flow.run_live(ctx):
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 89, in run_live
+    async with llm.connect(llm_request) as llm_connection:
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 268, in connect
     async with self._live_api_client.aio.live.connect(
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
@@ -130,10 +316,14 @@ websockets.exceptions.ConnectionClosedError: received 1007 (invalid frame payloa
 
 ## Failed Test Analysis
 
+- **gemini-2.5-flash-native-audio-preview-09-2025 (text)**: Unexpected failure - requires investigation
+- **gemini-2.5-flash-preview-native-audio-dialog (text)**: Audio-only model correctly rejects text input (expected behavior)
+- **gemini-2.5-flash-exp-native-audio-thinking-dialog (text)**: Audio-only model correctly rejects text input (expected behavior)
 - **gemini-live-2.5-flash-preview-native-audio (text)**: Unexpected failure - requires investigation
+- **gemini-live-2.5-flash-preview-native-audio-09-17 (text)**: Unexpected failure - requires investigation
 
 ## Environment Information
-- **ADK Version**: 1.6.1
+- **ADK Version**: 1.8.0
 - **Python Dependencies**: google-adk, google-cloud-speech, pyaudio, pydub, python-dotenv
 - **Audio Configuration**: Input 16kHz, Output 24kHz, PCM, Mono
 - **SSL Configuration**: Automatically configured using certifi
@@ -148,6 +338,12 @@ python test_tool.py --platform google-ai-studio
 
 # Test specific model
 python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp
+
+# Test with specific region
+python test_tool.py --platform vertex-ai --region us-west1
+
+# Test specific model in specific region
+python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp --region europe-west1
 ```
 
 ---

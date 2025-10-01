@@ -2,6 +2,10 @@
 
 A comprehensive testing framework for Google Agent Development Kit (ADK) bidirectional streaming functionality. This tool tests both text and voice interactions across Google AI Studio and Vertex AI platforms with multiple Gemini models.
 
+## Latest Test Report:
+
+See [the latest test report](test_report.md)
+
 ## Features
 
 ### Core Functionality
