@@ -19,13 +19,17 @@ See [the latest test report](test_report.md)
 ### Test Coverage
 
 #### Google AI Studio Models
-- `gemini-live-2.5-flash-preview`: Latest live preview with enhanced streaming
-- `gemini-2.0-flash-live-001`: Production-ready live model
 - `gemini-2.0-flash-exp`: Experimental flash model
+- `gemini-2.0-flash-live-001`: Production-ready live model
+- `gemini-live-2.5-flash-preview`: Latest live preview with enhanced streaming
+- `gemini-2.5-flash-native-audio-preview-09-2025`: Native audio model (audio-only)
+- `gemini-2.5-flash-preview-native-audio-dialog`: Dialog-optimized native audio model
+- `gemini-2.5-flash-exp-native-audio-thinking-dialog`: Experimental thinking-mode native audio model
 
 #### Vertex AI Models
-- `gemini-live-2.5-flash-preview-native-audio`: Native audio processing model
 - `gemini-2.0-flash-exp`: Experimental model on Vertex AI
+- `gemini-live-2.5-flash-preview-native-audio`: Native audio processing model
+- `gemini-live-2.5-flash-preview-native-audio-09-17`: Native audio model (September 2025 version)
 
 ### Audio Processing Pipeline
 - **Input Processing**: Converts M4A audio files to 16kHz, mono, 16-bit PCM format
@@ -58,7 +62,7 @@ pip install -r requirements.txt
 ```
 
 Key dependencies:
-- `google-adk==1.6.1`: Google Agent Development Kit
+- `google-adk==1.15.1`: Google Agent Development Kit
 - `google-cloud-speech`: Google Cloud Speech-to-Text API
 - `pyaudio`: Audio I/O (requires PortAudio)
 - `pydub`: Audio manipulation (requires FFmpeg)
@@ -145,7 +149,7 @@ All tests use the standardized question: **"What time is it now?"**
 
 ## Test Reports
 
-The tool automatically generates comprehensive test reports with timestamped filenames (`test_report_{region}_{timestamp}.md`) including:
+The tool automatically generates comprehensive test reports including:
 
 - **Test Summary**: Overall success rates and statistics
 - **Platform Breakdown**: Results by Google AI Studio vs Vertex AI
