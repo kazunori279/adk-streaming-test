@@ -22,13 +22,13 @@ See [the latest test report](test_report.md)
 - `gemini-2.0-flash-exp`: Experimental flash model
 - `gemini-2.0-flash-live-001`: Production-ready live model
 - `gemini-live-2.5-flash-preview`: Latest live preview with enhanced streaming
-- `gemini-2.5-flash-native-audio-preview-09-2025`: Native audio model (audio-only)
+- `gemini-2.5-flash-native-audio-preview-09-2025`: Native audio model (audio-only, uses transcription for text tests)
 - `gemini-2.5-flash-preview-native-audio-dialog`: Dialog-optimized native audio model
 - `gemini-2.5-flash-exp-native-audio-thinking-dialog`: Experimental thinking-mode native audio model
 
 #### Vertex AI Models
 - `gemini-2.0-flash-exp`: Experimental model on Vertex AI
-- `gemini-live-2.5-flash-preview-native-audio`: Native audio processing model
+- `gemini-live-2.5-flash-preview-native-audio`: Native audio processing model (audio-only, uses transcription for text tests)
 - `gemini-live-2.5-flash-preview-native-audio-09-17`: Native audio model (September 2025 version)
 
 ### Audio Processing Pipeline
@@ -37,6 +37,19 @@ See [the latest test report](test_report.md)
 - **Response Handling**: Receives 24kHz audio responses from models
 - **Audio Playback**: Plays responses through system speakers using PyAudio
 - **Speech Transcription**: Uses Google Cloud Speech-to-Text for response validation
+
+### Native-Audio Model Support
+Models with "native-audio" in their names (e.g., `gemini-2.5-flash-native-audio-preview-09-2025`) are audio-only models that require special handling:
+
+- **Text Chat Tests**: Instead of using TEXT modality, these models:
+  - Use AUDIO response modality with `output_audio_transcription` enabled
+  - Receive audio responses that are automatically transcribed by the API
+  - Extract text from `event.output_transcription.text` in the response stream
+  - Display as "Text (audio transcript)" in test reports
+
+- **Voice Chat Tests**: Work the same as standard models with direct audio input/output
+
+This allows comprehensive testing of native-audio models across both text and voice interaction modes.
 
 ## Requirements
 
@@ -135,9 +148,12 @@ All tests use the standardized question: **"What time is it now?"**
 
 ### Text Chat Testing
 1. Establishes ADK agent session with Google Search tool
-2. Sends text query via streaming API
-3. Receives and validates streaming text response
-4. Verifies response contains time information
+2. Detects model type and configures appropriate response modality:
+   - **Standard models**: Uses TEXT modality for text responses
+   - **Native-audio models**: Uses AUDIO modality with `AudioTranscriptionConfig` for audio responses with automatic transcription
+3. Sends text query via streaming API
+4. Receives and validates streaming response (text or audio transcript)
+5. Verifies response contains time information
 
 ### Voice Chat Testing
 1. Loads and converts M4A audio file to Live API format (16kHz, mono, 16-bit PCM)
@@ -172,6 +188,7 @@ The tool automatically generates comprehensive test reports including:
 
 1. **ADKStreamingTester**: Main test orchestrator
    - Manages platform configuration
+   - Detects and handles native-audio models with automatic transcription
    - Handles agent session creation
    - Executes test workflows
    - Collects results and metrics
