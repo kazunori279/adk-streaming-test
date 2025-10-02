@@ -13,6 +13,7 @@ import argparse
 from datetime import datetime
 from dotenv import load_dotenv
 from google.genai.types import Content, Part, Blob
+from google.genai import types
 from google.adk.runners import InMemoryRunner
 from google.adk.agents import Agent, LiveRequestQueue
 from google.adk.agents.run_config import RunConfig
@@ -125,6 +126,10 @@ class ADKStreamingTester:
         self.transcription_result = ""  # Store transcription for reporting
         self.error_trace = ""  # Store error details for reporting
 
+    def _is_native_audio_model(self) -> bool:
+        """Check if the model is a native-audio model."""
+        return "native-audio" in self.model.lower()
+
     async def setup_environment(self):
         """Configure environment variables for the platform."""
         if self.platform == "google-ai-studio":
@@ -135,7 +140,7 @@ class ADKStreamingTester:
             os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "TRUE"
             if not os.getenv("GOOGLE_CLOUD_PROJECT"):
                 raise ValueError("GOOGLE_CLOUD_PROJECT required for Vertex AI")
-            
+
             # Use provided region or fall back to environment variable or default
             if self.region:
                 os.environ["GOOGLE_CLOUD_LOCATION"] = self.region
@@ -166,36 +171,51 @@ class ADKStreamingTester:
     async def test_text_chat(self) -> bool:
         """Test text chat functionality."""
         self._print_test_header("TEXT CHAT")
-        
+
         try:
             await self.setup_environment()
             await self.create_agent_session()
-            
-            # Setup live streaming
+
+            # Setup live streaming based on model type
             live_request_queue = LiveRequestQueue()
-            run_config = RunConfig(response_modalities=["TEXT"])
+
+            # Native-audio models require AUDIO modality with transcription
+            if self._is_native_audio_model():
+                print("Native-audio model detected - using AUDIO modality with transcription")
+                run_config = RunConfig(
+                    response_modalities=["AUDIO"],
+                    output_audio_transcription=types.AudioTranscriptionConfig()
+                )
+            else:
+                run_config = RunConfig(response_modalities=["TEXT"])
+
             live_events = self.runner.run_live(
                 user_id="test_user",
                 session_id=self.session.id,
                 live_request_queue=live_request_queue,
                 run_config=run_config,
             )
-            
+
             # Send question and collect response
             content = Content(role="user", parts=[Part.from_text(text=Config.TEST_QUESTION)])
             live_request_queue.send_content(content=content)
-            
+
             print(f"Question: {Config.TEST_QUESTION}")
             print("Response: ", end="", flush=True)
-            
-            full_response = await self._collect_text_response(live_events)
+
+            # Collect response based on model type
+            if self._is_native_audio_model():
+                full_response = await self._collect_audio_transcription_response(live_events)
+            else:
+                full_response = await self._collect_text_response(live_events)
+
             live_request_queue.close()
-            
+
             # Verify response
             success = self._verify_time_response(full_response)
             self._print_test_result(success, "Response contains time-related information")
             return success
-            
+
         except Exception as exc:
             return self._handle_test_exception(exc)
     
@@ -239,6 +259,19 @@ class ADKStreamingTester:
                 if part.text and event.partial:
                     print(part.text, end="", flush=True)
                     full_response += part.text
+        print("\n")
+        return full_response
+
+    async def _collect_audio_transcription_response(self, live_events) -> str:
+        """Collect audio transcription response from live events."""
+        full_response = ""
+        async for event in live_events:
+            if event.turn_complete:
+                break
+            if event.output_transcription and event.output_transcription.text:
+                transcript_text = event.output_transcription.text
+                print(transcript_text, end="", flush=True)
+                full_response += transcript_text
         print("\n")
         return full_response
 
@@ -552,21 +585,21 @@ def _generate_report_header(results: dict) -> str:
 def _generate_detailed_results(results: dict) -> str:
     """Generate the detailed results section for combined tests."""
     content = ""
-    
+
     # Group by platform and model for combined tests
     platforms = {}
     for test_name, success in results.items():
         platform, model, current_test_type = _parse_test_name(test_name)
         if not platform or not current_test_type:
             continue
-            
+
         if platform not in platforms:
             platforms[platform] = {}
         if model not in platforms[platform]:
             platforms[platform][model] = {}
-            
+
         platforms[platform][model][current_test_type] = success
-    
+
     # Generate platform sections
     for platform, models in platforms.items():
         platform_name = _get_platform_display_name(platform)
@@ -576,10 +609,15 @@ def _generate_detailed_results(results: dict) -> str:
             for test_t in ["text", "voice"]:
                 if test_t in tests:
                     icon, status = _format_test_result(tests[test_t])
-                    content += f"  - {test_t.title()}: {icon} {status}\n"
+                    # Check if model is native-audio and this is a text test
+                    if test_t == "text" and "native-audio" in model.lower():
+                        label = "Text (audio transcript)"
+                    else:
+                        label = test_t.title()
+                    content += f"  - {label}: {icon} {status}\n"
             content += "\n"
         content += "\n"
-    
+
     return content
 
 def _generate_transcription_results(transcriptions: dict) -> str:
