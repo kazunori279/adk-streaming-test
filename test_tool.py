@@ -10,6 +10,7 @@ text and voice tests for comprehensive evaluation.
 import os
 import asyncio
 import argparse
+import warnings
 from datetime import datetime
 from dotenv import load_dotenv
 from google.genai.types import Content, Part, Blob
@@ -22,6 +23,9 @@ from google.cloud import speech
 import pyaudio
 from pydub import AudioSegment
 import google.adk
+
+# Suppress Pydantic serialization warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 
 # Load environment variables
 load_dotenv()
@@ -125,6 +129,7 @@ class ADKStreamingTester:
         self.session = None
         self.transcription_result = ""  # Store transcription for reporting
         self.error_trace = ""  # Store error details for reporting
+        self.failure_reason = ""  # Store failure reason for reporting
 
     def _is_native_audio_model(self) -> bool:
         """Check if the model is a native-audio model."""
@@ -213,6 +218,11 @@ class ADKStreamingTester:
 
             # Verify response
             success = self._verify_time_response(full_response)
+            if not success:
+                if not full_response or full_response.strip() == "":
+                    self.failure_reason = "Empty response received"
+                else:
+                    self.failure_reason = "Response does not contain time-related keywords"
             self._print_test_result(success, "Response contains time-related information")
             return success
 
@@ -245,6 +255,7 @@ class ADKStreamingTester:
         """Handle test exceptions consistently."""
         import traceback
         self.error_trace = traceback.format_exc()
+        self.failure_reason = f"Exception: {str(exc)}"
         self._print_test_error(str(exc))
         return False
     
@@ -369,74 +380,91 @@ class ADKStreamingTester:
         if not audio_data:
             print("No audio response received")
             self.transcription_result = "No audio response received"
+            self.failure_reason = "No audio response received"
             return False
-        
+
         print("Playing voice response...")
         voice_handler.play_audio(audio_data)
-        
+
         # Transcribe for verification
         response_text = voice_handler.speech_to_text(audio_data)
         self.transcription_result = response_text or text_data or "No transcription available"
         print(f"Voice response (transcribed): '{response_text}'")
-        
+
         # Verify response contains time information
         verification_text = response_text or text_data
-        return self._verify_time_response(verification_text)
+        success = self._verify_time_response(verification_text)
+        if not success:
+            if not verification_text or verification_text.strip() == "":
+                self.failure_reason = "No transcribable content in audio response"
+            else:
+                self.failure_reason = "Voice response does not contain time-related keywords"
+        return success
 
-async def run_all_tests(region: str = None) -> tuple[dict, dict, dict]:
+async def run_all_tests(region: str = None) -> tuple[dict, dict, dict, dict, dict]:
     """Run combined text and voice tests for all platform and model combinations."""
     print("Starting ADK Bidirectional Streaming Tests (COMBINED)")
     print("=" * 60)
-    
+
     results = {}
     transcriptions = {}
     error_traces = {}
-    
+    retry_counts = {}
+    failure_reasons = {}
+
     # Test Google AI Studio
     print("\nTesting Google AI Studio Platform")
     print("-" * 40)
-    
+
     # Run both text and voice tests for Google AI Studio
-    studio_text_results, studio_text_transcriptions, studio_text_errors = await _test_platform(
+    studio_text_results, studio_text_transcriptions, studio_text_errors, studio_text_retries, studio_text_failures = await _test_platform(
         "google-ai-studio", Config.GOOGLE_AI_STUDIO_MODELS, "text", region
     )
-    studio_voice_results, studio_voice_transcriptions, studio_voice_errors = await _test_platform(
+    studio_voice_results, studio_voice_transcriptions, studio_voice_errors, studio_voice_retries, studio_voice_failures = await _test_platform(
         "google-ai-studio", Config.GOOGLE_AI_STUDIO_MODELS, "voice", region
     )
-    
+
     results.update(studio_text_results)
     results.update(studio_voice_results)
     transcriptions.update(studio_text_transcriptions)
     transcriptions.update(studio_voice_transcriptions)
     error_traces.update(studio_text_errors)
     error_traces.update(studio_voice_errors)
-    
+    retry_counts.update(studio_text_retries)
+    retry_counts.update(studio_voice_retries)
+    failure_reasons.update(studio_text_failures)
+    failure_reasons.update(studio_voice_failures)
+
     # Test Vertex AI
-    print("\nTesting Google Cloud Vertex AI Platform") 
+    print("\nTesting Google Cloud Vertex AI Platform")
     print("-" * 40)
-    
+
     # Run both text and voice tests for Vertex AI
-    vertex_text_results, vertex_text_transcriptions, vertex_text_errors = await _test_platform(
+    vertex_text_results, vertex_text_transcriptions, vertex_text_errors, vertex_text_retries, vertex_text_failures = await _test_platform(
         "vertex-ai", Config.VERTEX_AI_MODELS, "text", region
     )
-    vertex_voice_results, vertex_voice_transcriptions, vertex_voice_errors = await _test_platform(
+    vertex_voice_results, vertex_voice_transcriptions, vertex_voice_errors, vertex_voice_retries, vertex_voice_failures = await _test_platform(
         "vertex-ai", Config.VERTEX_AI_MODELS, "voice", region
     )
-    
+
     results.update(vertex_text_results)
     results.update(vertex_voice_results)
     transcriptions.update(vertex_text_transcriptions)
     transcriptions.update(vertex_voice_transcriptions)
     error_traces.update(vertex_text_errors)
     error_traces.update(vertex_voice_errors)
-    
+    retry_counts.update(vertex_text_retries)
+    retry_counts.update(vertex_voice_retries)
+    failure_reasons.update(vertex_text_failures)
+    failure_reasons.update(vertex_voice_failures)
+
     # Print summary and generate report
     _print_test_summary(results)
     report_filename = _generate_report_filename(region)
-    generate_test_report(results, "both", output_file=report_filename, transcriptions=transcriptions, error_traces=error_traces)
+    generate_test_report(results, "both", output_file=report_filename, transcriptions=transcriptions, error_traces=error_traces, retry_counts=retry_counts, failure_reasons=failure_reasons)
     print(f"\nTest report generated: {report_filename}")
-    
-    return results, transcriptions, error_traces
+
+    return results, transcriptions, error_traces, retry_counts, failure_reasons
 
 def _handle_test_error(exc: Exception, platform: str, model: str, test_type: str) -> tuple[bool, str, str]:
     """Handle test errors consistently."""
@@ -446,46 +474,83 @@ def _handle_test_error(exc: Exception, platform: str, model: str, test_type: str
     transcription = f"Error: {str(exc)}" if test_type == "voice" else ""
     return False, error_trace, transcription
 
-async def _run_single_test(tester: ADKStreamingTester, test_type: str) -> tuple[bool, str]:
-    """Run a single test and return success status and transcription."""
+async def _run_single_test(tester: ADKStreamingTester, test_type: str) -> tuple[bool, str, str]:
+    """Run a single test and return success status, transcription, and failure reason."""
     if test_type == "voice":
         success = await tester.test_voice_chat()
-        return success, tester.transcription_result
+        return success, tester.transcription_result, tester.failure_reason
     else:
         success = await tester.test_text_chat()
-        return success, ""
+        return success, "", tester.failure_reason
 
-async def _test_platform(platform: str, models: list, test_type: str, region: str = None) -> tuple[dict, dict, dict]:
+async def _run_single_test_with_retry(tester: ADKStreamingTester, test_type: str, max_retries: int = 3) -> tuple[bool, str, int, str]:
+    """Run a single test with retry logic.
+
+    Args:
+        tester: The ADKStreamingTester instance
+        test_type: Type of test ("text" or "voice")
+        max_retries: Maximum number of retry attempts (default: 3)
+
+    Returns:
+        Tuple of (success, transcription, retry_count, failure_reason)
+        retry_count is 0 for first attempt success, 1+ for retries
+    """
+    failure_reason = ""
+    transcription = ""
+
+    for attempt in range(max_retries):
+        if attempt > 0:
+            print(f"\nRetrying test (attempt {attempt + 1}/{max_retries})...")
+            await asyncio.sleep(2)  # Brief delay before retry
+
+        success, transcription, failure_reason = await _run_single_test(tester, test_type)
+
+        if success:
+            return success, transcription, attempt, ""
+
+    # All retries exhausted
+    return False, transcription, max_retries - 1, failure_reason
+
+async def _test_platform(platform: str, models: list, test_type: str, region: str = None) -> tuple[dict, dict, dict, dict, dict]:
     """Test all models for a specific platform."""
     results = {}
     transcriptions = {}
     error_traces = {}
-    
+    retry_counts = {}
+    failure_reasons = {}
+
     for model in models:
         test_key = f"{platform}-{model}-{test_type}"
         tester = ADKStreamingTester(platform, model, region)
-        
+
         try:
-            success, transcription = await _run_single_test(tester, test_type)
+            success, transcription, retry_count, failure_reason = await _run_single_test_with_retry(tester, test_type)
             results[test_key] = success
-            
+            retry_counts[test_key] = retry_count
+
             if test_type == "voice":
                 transcriptions[test_key] = transcription
-            
+
+            # Store failure reason if test failed
+            if not success and failure_reason:
+                failure_reasons[test_key] = failure_reason
+
             # Store error trace if there was an error during testing
             if tester.error_trace:
                 error_traces[test_key] = tester.error_trace
-                
+
         except Exception as exc:
             success, error_trace, transcription = _handle_test_error(exc, platform, model, test_type)
             results[test_key] = success
+            retry_counts[test_key] = 2  # Mark as max retries on exception
             error_traces[test_key] = error_trace
+            failure_reasons[test_key] = f"Exception: {str(exc)}"
             if test_type == "voice":
                 transcriptions[test_key] = transcription
-        
+
         await asyncio.sleep(1)  # Brief delay between tests
-    
-    return results, transcriptions, error_traces
+
+    return results, transcriptions, error_traces, retry_counts, failure_reasons
 
 def _parse_test_name(test_name: str) -> tuple[str, str, str]:
     """Parse test name into platform, model, and test type.
@@ -541,24 +606,35 @@ def _print_test_summary(results: dict):
     
     print(f"\nOverall: {passed_tests}/{total_tests} tests passed")
 
-def _generate_report_header(results: dict) -> str:
+def _generate_report_header(results: dict, retry_counts: dict = None) -> str:
     """Generate the header section of the test report."""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     google_project = os.getenv("GOOGLE_CLOUD_PROJECT", "Not configured")
     google_location = os.getenv("GOOGLE_CLOUD_LOCATION", "Not configured")
     adk_version = google.adk.__version__
-    
+
     total_tests = len(results)
     passed_tests = sum(1 for success in results.values() if success)
     success_rate = (passed_tests / total_tests * 100) if total_tests > 0 else 0
-    
+
     text_results = {k: v for k, v in results.items() if k.endswith("-text")}
     voice_results = {k: v for k, v in results.items() if k.endswith("-voice")}
     text_passed = sum(1 for success in text_results.values() if success)
     voice_passed = sum(1 for success in voice_results.values() if success)
     text_rate = (text_passed / len(text_results) * 100) if text_results else 0
     voice_rate = (voice_passed / len(voice_results) * 100) if voice_results else 0
-    
+
+    # Calculate retry statistics
+    retry_stats = ""
+    if retry_counts:
+        tests_with_retries = sum(1 for count in retry_counts.values() if count > 0)
+        total_retries = sum(retry_counts.values())
+        retry_stats = f"""
+### Retry Statistics
+- **Tests requiring retries**: {tests_with_retries}/{total_tests}
+- **Total retry attempts**: {total_retries}
+"""
+
     return f"""# ADK Bidirectional Streaming Test Report
 
 ## Test Summary
@@ -573,7 +649,7 @@ def _generate_report_header(results: dict) -> str:
 ### Test Type Breakdown
 - **Text Tests**: {text_passed}/{len(text_results)} passed ({text_rate:.1f}%)
 - **Voice Tests**: {voice_passed}/{len(voice_results)} passed ({voice_rate:.1f}%)
-
+{retry_stats}
 ## Environment Configuration
 - **Google Cloud Project**: {google_project}
 - **Google Cloud Location**: {google_location}
@@ -582,7 +658,7 @@ def _generate_report_header(results: dict) -> str:
 
 """
 
-def _generate_detailed_results(results: dict) -> str:
+def _generate_detailed_results(results: dict, retry_counts: dict = None, failure_reasons: dict = None) -> str:
     """Generate the detailed results section for combined tests."""
     content = ""
 
@@ -598,7 +674,9 @@ def _generate_detailed_results(results: dict) -> str:
         if model not in platforms[platform]:
             platforms[platform][model] = {}
 
-        platforms[platform][model][current_test_type] = success
+        retry_count = retry_counts.get(test_name, 0) if retry_counts else 0
+        failure_reason = failure_reasons.get(test_name, "") if failure_reasons else ""
+        platforms[platform][model][current_test_type] = (success, retry_count, failure_reason)
 
     # Generate platform sections
     for platform, models in platforms.items():
@@ -608,13 +686,21 @@ def _generate_detailed_results(results: dict) -> str:
             content += f"**{model}**:\n"
             for test_t in ["text", "voice"]:
                 if test_t in tests:
-                    icon, status = _format_test_result(tests[test_t])
+                    success, retry_count, failure_reason = tests[test_t]
+                    icon, status = _format_test_result(success)
                     # Check if model is native-audio and this is a text test
                     if test_t == "text" and "native-audio" in model.lower():
                         label = "Text (audio transcript)"
                     else:
                         label = test_t.title()
-                    content += f"  - {label}: {icon} {status}\n"
+
+                    # Add retry information if there were retries
+                    retry_info = f" (retries: {retry_count})" if retry_count > 0 else ""
+
+                    # Add failure reason if test failed
+                    failure_info = f" - Reason: {failure_reason}" if not success and failure_reason else ""
+
+                    content += f"  - {label}: {icon} {status}{retry_info}{failure_info}\n"
             content += "\n"
         content += "\n"
 
@@ -688,6 +774,12 @@ def _generate_methodology_section() -> str:
 - Agent successfully uses Google Search tool for real-time information
 - Bidirectional streaming communication works correctly
 
+### Retry Logic
+- Each test is automatically retried up to 3 times if it fails
+- A 2-second delay is applied between retry attempts
+- Tests succeed on first attempt show 0 retries
+- Failed tests show the number of retry attempts made
+
 ### Platform Configuration
 - **Google AI Studio**: Uses GOOGLE_API_KEY with GOOGLE_GENAI_USE_VERTEXAI=FALSE
 - **Vertex AI**: Uses GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION with GOOGLE_GENAI_USE_VERTEXAI=TRUE
@@ -722,15 +814,15 @@ def _generate_report_filename(region: str = None) -> str:
     # Create filename with region and timestamp
     return f"test_report_{region}_{timestamp}.md"
 
-def generate_test_report(results, test_type, output_file="test_report.md", transcriptions=None, error_traces=None):
+def generate_test_report(results, test_type, output_file="test_report.md", transcriptions=None, error_traces=None, retry_counts=None, failure_reasons=None):
     """Generate a comprehensive test report file for combined tests."""
     # Build report content using helper functions
-    report_content = _generate_report_header(results)
-    report_content += _generate_detailed_results(results)
+    report_content = _generate_report_header(results, retry_counts)
+    report_content += _generate_detailed_results(results, retry_counts, failure_reasons)
     report_content += _generate_transcription_results(transcriptions or {})
     report_content += _generate_error_traces(error_traces or {})
     report_content += _generate_methodology_section()
-    
+
     # Add failed test analysis
     failed_tests = [k for k, v in results.items() if not v]
     if failed_tests:
@@ -738,14 +830,20 @@ def generate_test_report(results, test_type, output_file="test_report.md", trans
         for test_name in failed_tests:
             platform, model, test_type_display = _parse_test_name(test_name)
             formatted_name = f"{model} ({test_type_display})"
-            
+
+            # Get failure reason if available
+            failure_reason = failure_reasons.get(test_name, "Unknown") if failure_reasons else "Unknown"
+
             if "audio-dialog" in test_name or "audio-thinking" in test_name:
                 if "text" in test_name:
                     report_content += f"- **{formatted_name}**: Audio-only model correctly rejects text input (expected behavior)\n"
+                    report_content += f"  - Failure Reason: {failure_reason}\n"
                 else:
                     report_content += f"- **{formatted_name}**: Unexpected failure - requires investigation\n"
+                    report_content += f"  - Failure Reason: {failure_reason}\n"
             else:
                 report_content += f"- **{formatted_name}**: Unexpected failure - requires investigation\n"
+                report_content += f"  - Failure Reason: {failure_reason}\n"
         report_content += "\n"
     
     # Add environment and usage information
@@ -826,7 +924,7 @@ def _run_single_model_tests(args):
 
 def _run_all_model_tests(args):
     """Run combined tests for all models."""
-    results, transcriptions, error_traces = asyncio.run(run_all_tests(args.region))
+    results, transcriptions, error_traces, retry_counts, failure_reasons = asyncio.run(run_all_tests(args.region))
 
 
 if __name__ == "__main__":
