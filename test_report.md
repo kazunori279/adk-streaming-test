@@ -1,16 +1,16 @@
 # ADK Bidirectional Streaming Test Report
 
 ## Test Summary
-- **Test Date**: 2025-10-02 14:29:32
+- **Test Date**: 2025-10-17 09:45:00
 - **Test Type**: COMBINED (Text + Voice)
-- **Google ADK Version**: 1.15.1
+- **Google ADK Version**: 1.16.0
 - **Total Tests**: 18
-- **Passed Tests**: 18
-- **Failed Tests**: 0
-- **Success Rate**: 100.0%
+- **Passed Tests**: 17
+- **Failed Tests**: 1
+- **Success Rate**: 94.4%
 
 ### Test Type Breakdown
-- **Text Tests**: 9/9 passed (100.0%)
+- **Text Tests**: 8/9 passed (88.9%)
 - **Voice Tests**: 9/9 passed (100.0%)
 
 ## Environment Configuration
@@ -42,7 +42,7 @@
   - Voice: ✅ PASS
 
 **gemini-2.5-flash-exp-native-audio-thinking-dialog**:
-  - Text (audio transcript): ✅ PASS
+  - Text (audio transcript): ❌ FAIL
   - Voice: ✅ PASS
 
 
@@ -65,25 +65,25 @@
 
 ### Google AI Studio
 
-**gemini-2.0-flash-exp**: "it is currently 2:25 p.m. in Tokyo Japan"
+**gemini-2.0-flash-exp**: "right now it's 9:40 a.m. in Tokyo Japan"
 
-**gemini-2.0-flash-live-001**: "it is 2:26 p.m. in Tokyo Japan"
+**gemini-2.0-flash-live-001**: "it is 9:40 a.m. in Tokyo Japan"
 
-**gemini-live-2.5-flash-preview**: "the current time in Tokyo Japan is 2:26 p.m. on Thursday October 2nd 2025 Tokyo observes Japan's Standard time jst which is 9 hours ahead of coordinated universal time UTC"
+**gemini-live-2.5-flash-preview**: "the current time in Tokyo Japan is 9:40 a.m. on Friday October 17th 2025 Tokyo observes Japan Standard time jst which is UTC +9 and does not use daylight saving time"
 
-**gemini-2.5-flash-native-audio-preview-09-2025**: "the current time in Tokyo Japan is 227 p.m."
+**gemini-2.5-flash-native-audio-preview-09-2025**: "the current time in Tokyo Japan is 9:41 a.m."
 
-**gemini-2.5-flash-preview-native-audio-dialog**: "the current time in Tokyo Japan is 227 p.m. it is in the Asia Tokyo time zone"
+**gemini-2.5-flash-preview-native-audio-dialog**: "the current time in Tokyo Japan is 9:42 a.m."
 
-**gemini-2.5-flash-exp-native-audio-thinking-dialog**: "the current time in Tokyo Japan is 2:28 p.m. in the Asia Tokyo time zone"
+**gemini-2.5-flash-exp-native-audio-thinking-dialog**: "the current time in Tokyo Japan is 9:42 a.m. in the time zone Asia Tokyo"
 
 ### Vertex AI
 
-**gemini-2.0-flash-exp**: "it's 2:28 p.m. in Tokyo"
+**gemini-2.0-flash-exp**: "it is 9:43 a.m. in Tokyo"
 
-**gemini-live-2.5-flash-preview-native-audio**: "it's currently 2:29 p.m. in Tokyo"
+**gemini-live-2.5-flash-preview-native-audio**: "the current time in Tokyo Japan is 9:44 a.m. Tokyo observes Japan Standard time which is UTC +9 and does not observe Daylight Saving Time"
 
-**gemini-live-2.5-flash-preview-native-audio-09-17**: "it's currently 2:29 p.m. in Tokyo Japan"
+**gemini-live-2.5-flash-preview-native-audio-09-17**: "the current time in Tokyo Japan is 9:44 a.m."
 
 ## Test Methodology
 
@@ -113,8 +113,12 @@
 - Plays audio response using PyAudio
 - Transcribes response using Google Cloud Speech-to-Text for validation
 
+## Failed Test Analysis
+
+- **gemini-2.5-flash-exp-native-audio-thinking-dialog (text)**: Audio-only model correctly rejects text input (expected behavior)
+
 ## Environment Information
-- **ADK Version**: 1.15.1
+- **ADK Version**: 1.16.0
 - **Python Dependencies**: google-adk, google-cloud-speech, pyaudio, pydub, python-dotenv
 - **Audio Configuration**: Input 16kHz, Output 24kHz, PCM, Mono
 - **SSL Configuration**: Automatically configured using certifi
