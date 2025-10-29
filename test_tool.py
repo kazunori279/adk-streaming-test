@@ -660,7 +660,12 @@ def _generate_report_header(results: dict, retry_counts: dict = None) -> str:
 
 def _generate_detailed_results(results: dict, retry_counts: dict = None, failure_reasons: dict = None) -> str:
     """Generate the detailed results section for combined tests."""
-    content = ""
+    content = """
+**Note**: The following model list includes both officially supported models and deprecated models. To see a list of the currently supported models, see:
+- **Gemini Live API**: Check the [Get started with Live API](https://ai.google.dev/gemini-api/docs/live#audio-generation)
+- **Vertex AI Live API**: Check the [official Vertex AI Live API documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/live-api)
+
+"""
 
     # Group by platform and model for combined tests
     platforms = {}

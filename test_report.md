@@ -1,7 +1,7 @@
 # ADK Bidirectional Streaming Test Report
 
 ## Test Summary
-- **Test Date**: 2025-10-30 02:46:14
+- **Test Date**: 2025-10-30 03:01:26
 - **Test Type**: COMBINED (Text + Voice)
 - **Google ADK Version**: 1.17.0
 - **Total Tests**: 18
@@ -22,6 +22,11 @@
 - **Google Cloud Location**: us-central1
 
 ## Detailed Results
+
+
+**Note**: The following model list includes both officially supported models and deprecated models. To see a list of the currently supported models, see:
+- **Gemini Live API**: Check the [Get started with Live API](https://ai.google.dev/gemini-api/docs/live#audio-generation)
+- **Vertex AI Live API**: Check the [official Vertex AI Live API documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/live-api)
 
 ### Google AI Studio
 
@@ -69,13 +74,13 @@
 
 ### Google AI Studio
 
-**gemini-2.0-flash-exp**: "it is 2:42 a.m. in Tokyo Japan"
+**gemini-2.0-flash-exp**: "it is 2:58 a.m. in Tokyo Japan"
 
-**gemini-2.0-flash-live-001**: "it is 2:42 a.m. on Thursday October 30th 2025 in Tokyo"
+**gemini-2.0-flash-live-001**: "it is 2:58 a.m. in Tokyo Japan"
 
-**gemini-live-2.5-flash-preview**: "the current time in Tokyo Japan is 2:43 a.m. on Wednesday October 29th 2025 Tokyo observes Japan Standard time jst which is UTC GMT + 9 hours and does not use daylight saving time"
+**gemini-live-2.5-flash-preview**: "the current time in Tokyo Japan is 2:58 a.m. on Thursday October 30th 2025"
 
-**gemini-2.5-flash-native-audio-preview-09-2025**: "the current time in Tokyo Japan is 2 244 a.m."
+**gemini-2.5-flash-native-audio-preview-09-2025**: "the current time in Tokyo Japan is 259 a.m."
 
 **gemini-2.5-flash-preview-native-audio-dialog**: ""
 
@@ -83,11 +88,11 @@
 
 ### Vertex AI
 
-**gemini-2.0-flash-exp**: "it's 2:45 a.m. in Tokyo"
+**gemini-2.0-flash-exp**: "it is 3:00 a.m. in Tokyo"
 
-**gemini-live-2.5-flash-preview-native-audio**: "the current time in Tokyo Japan is 2:45 a.m. on Thursday October 30 2025"
+**gemini-live-2.5-flash-preview-native-audio**: "it is currently 3:00 a.m. in Tokyo Japan"
 
-**gemini-live-2.5-flash-preview-native-audio-09-17**: "the current time in Tokyo Japan is 2:46 a.m."
+**gemini-live-2.5-flash-preview-native-audio-09-17**: "the current time in Tokyo Japan is 301 a.m."
 
 ## Error Traces
 
