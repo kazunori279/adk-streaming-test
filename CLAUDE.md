@@ -14,6 +14,7 @@ This is a comprehensive Python testing framework for Google Agent Development Ki
 - **Automated Reporting**: Comprehensive test reports with metrics, transcriptions, and error analysis
 - **Real-time Streaming**: Bidirectional streaming with chunked audio processing
 - **Validation Framework**: Automated response verification with configurable success criteria
+- **Headless Mode**: CI/GitHub Actions compatible mode that skips audio playback while preserving all validation functionality
 
 ### Technical Components
 - Python virtual environment in `.venv/`
@@ -69,6 +70,7 @@ Development and testing commands for this ADK streaming test project:
 - **Test specific model**: `python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp`
 - **Test with specific region**: `python test_tool.py --platform vertex-ai --region europe-west1`
 - **Test specific model in region**: `python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp --region us-west1`
+- **Run in headless mode (CI/GitHub Actions)**: `python test_tool.py --headless`
 - **View test results**: Open generated timestamped report files
 
 ### Platform Configuration

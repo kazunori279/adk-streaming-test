@@ -68,9 +68,15 @@ class Config:
 class VoiceHandler:
     """Handles voice input/output for testing."""
 
-    def __init__(self):
+    def __init__(self, headless: bool = False):
         self.stt_client = speech.SpeechClient()
-        self.pyaudio_instance = pyaudio.PyAudio()
+        self.headless = headless
+        # Only initialize PyAudio if not in headless mode
+        if not headless:
+            self.pyaudio_instance = pyaudio.PyAudio()
+        else:
+            self.pyaudio_instance = None
+            print("VoiceHandler initialized in headless mode (audio playback disabled)")
 
     def load_audio_as_pcm(self, audio_path: str) -> bytes:
         """Load audio file and convert to PCM format for Live API."""
@@ -90,7 +96,11 @@ class VoiceHandler:
         return pcm_data
 
     def play_audio(self, audio_data: bytes):
-        """Play audio data through speakers."""
+        """Play audio data through speakers (skip in headless mode)."""
+        if self.headless:
+            print("Skipping audio playback (headless mode)")
+            return
+
         stream = self.pyaudio_instance.open(
             format=Config.AUDIO_FORMAT,
             channels=Config.CHANNELS,
@@ -115,16 +125,17 @@ class VoiceHandler:
 
     def __del__(self):
         """Clean up PyAudio instance."""
-        if hasattr(self, 'pyaudio_instance'):
+        if hasattr(self, 'pyaudio_instance') and self.pyaudio_instance is not None:
             self.pyaudio_instance.terminate()
 
 class ADKStreamingTester:
     """Tests ADK bidirectional streaming functionality."""
 
-    def __init__(self, platform: str, model: str, region: str = None):
+    def __init__(self, platform: str, model: str, region: str = None, headless: bool = False):
         self.platform = platform
         self.model = model
         self.region = region
+        self.headless = headless
         self.runner = None
         self.session = None
         self.transcription_result = ""  # Store transcription for reporting
@@ -302,12 +313,12 @@ class ADKStreamingTester:
     async def test_voice_chat(self) -> bool:
         """Test voice chat functionality."""
         self._print_test_header("VOICE CHAT")
-        
+
         try:
             await self.setup_environment()
             await self.create_agent_session()
-            
-            voice_handler = VoiceHandler()
+
+            voice_handler = VoiceHandler(headless=self.headless)
             
             # Setup live streaming for audio
             live_request_queue = LiveRequestQueue()
@@ -401,9 +412,11 @@ class ADKStreamingTester:
                 self.failure_reason = "Voice response does not contain time-related keywords"
         return success
 
-async def run_all_tests(region: str = None) -> tuple[dict, dict, dict, dict, dict]:
+async def run_all_tests(region: str = None, headless: bool = False) -> tuple[dict, dict, dict, dict, dict]:
     """Run combined text and voice tests for all platform and model combinations."""
     print("Starting ADK Bidirectional Streaming Tests (COMBINED)")
+    if headless:
+        print("Running in HEADLESS mode - audio playback disabled")
     print("=" * 60)
 
     results = {}
@@ -418,10 +431,10 @@ async def run_all_tests(region: str = None) -> tuple[dict, dict, dict, dict, dic
 
     # Run both text and voice tests for Google AI Studio
     studio_text_results, studio_text_transcriptions, studio_text_errors, studio_text_retries, studio_text_failures = await _test_platform(
-        "google-ai-studio", Config.GOOGLE_AI_STUDIO_MODELS, "text", region
+        "google-ai-studio", Config.GOOGLE_AI_STUDIO_MODELS, "text", region, headless
     )
     studio_voice_results, studio_voice_transcriptions, studio_voice_errors, studio_voice_retries, studio_voice_failures = await _test_platform(
-        "google-ai-studio", Config.GOOGLE_AI_STUDIO_MODELS, "voice", region
+        "google-ai-studio", Config.GOOGLE_AI_STUDIO_MODELS, "voice", region, headless
     )
 
     results.update(studio_text_results)
@@ -441,10 +454,10 @@ async def run_all_tests(region: str = None) -> tuple[dict, dict, dict, dict, dic
 
     # Run both text and voice tests for Vertex AI
     vertex_text_results, vertex_text_transcriptions, vertex_text_errors, vertex_text_retries, vertex_text_failures = await _test_platform(
-        "vertex-ai", Config.VERTEX_AI_MODELS, "text", region
+        "vertex-ai", Config.VERTEX_AI_MODELS, "text", region, headless
     )
     vertex_voice_results, vertex_voice_transcriptions, vertex_voice_errors, vertex_voice_retries, vertex_voice_failures = await _test_platform(
-        "vertex-ai", Config.VERTEX_AI_MODELS, "voice", region
+        "vertex-ai", Config.VERTEX_AI_MODELS, "voice", region, headless
     )
 
     results.update(vertex_text_results)
@@ -511,7 +524,7 @@ async def _run_single_test_with_retry(tester: ADKStreamingTester, test_type: str
     # All retries exhausted
     return False, transcription, max_retries - 1, failure_reason
 
-async def _test_platform(platform: str, models: list, test_type: str, region: str = None) -> tuple[dict, dict, dict, dict, dict]:
+async def _test_platform(platform: str, models: list, test_type: str, region: str = None, headless: bool = False) -> tuple[dict, dict, dict, dict, dict]:
     """Test all models for a specific platform."""
     results = {}
     transcriptions = {}
@@ -521,7 +534,7 @@ async def _test_platform(platform: str, models: list, test_type: str, region: st
 
     for model in models:
         test_key = f"{platform}-{model}-{test_type}"
-        tester = ADKStreamingTester(platform, model, region)
+        tester = ADKStreamingTester(platform, model, region, headless)
 
         try:
             success, transcription, retry_count, failure_reason = await _run_single_test_with_retry(tester, test_type)
@@ -888,27 +901,34 @@ python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp --region e
     print(f"\n📄 Test report saved to: {output_file}")
     return output_file
 
-async def test_single_model_combined(platform: str, model: str, region: str = None) -> tuple[bool, bool]:
+async def test_single_model_combined(platform: str, model: str, region: str = None, headless: bool = False) -> tuple[bool, bool]:
     """Test a single platform and model combination with both text and voice tests."""
-    tester = ADKStreamingTester(platform, model, region)
-    
+    tester = ADKStreamingTester(platform, model, region, headless)
+
     print(f"Testing text chat for {model}:")
     text_success = await tester.test_text_chat()
-    
+
     print(f"\nTesting voice chat for {model}:")
     voice_success = await tester.test_voice_chat()
-    
+
     return text_success, voice_success
 
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(description="ADK Bidirectional Streaming Test Tool - Combined Text and Voice Testing")
-    parser.add_argument("--platform", choices=["google-ai-studio", "vertex-ai", "all"], 
+    parser.add_argument("--platform", choices=["google-ai-studio", "vertex-ai", "all"],
                        default="all", help="Platform to test")
     parser.add_argument("--model", help="Specific model to test")
     parser.add_argument("--region", help="Google Cloud region to use (overrides GOOGLE_CLOUD_LOCATION env var)")
-    
+    parser.add_argument("--headless", action="store_true",
+                       help="Run in headless mode (skip audio playback for CI environments)")
+
     args = parser.parse_args()
+
+    # Auto-detect CI environment if --headless not explicitly set
+    if not args.headless and (os.getenv("CI") or os.getenv("GITHUB_ACTIONS")):
+        args.headless = True
+        print("CI environment detected - running in headless mode")
     
     # Set SSL certificate file as required by ADK
     os.environ["SSL_CERT_FILE"] = os.popen("python -m certifi").read().strip()
@@ -923,13 +943,13 @@ def _run_single_model_tests(args):
     if args.platform == "all":
         print("Error: Must specify platform when testing specific model")
         return
-    
+
     print("Running combined text and voice tests:")
-    asyncio.run(test_single_model_combined(args.platform, args.model, args.region))
+    asyncio.run(test_single_model_combined(args.platform, args.model, args.region, args.headless))
 
 def _run_all_model_tests(args):
     """Run combined tests for all models."""
-    results, transcriptions, error_traces, retry_counts, failure_reasons = asyncio.run(run_all_tests(args.region))
+    results, transcriptions, error_traces, retry_counts, failure_reasons = asyncio.run(run_all_tests(args.region, args.headless))
 
 
 if __name__ == "__main__":
