@@ -75,7 +75,7 @@ pip install -r requirements.txt
 ```
 
 Key dependencies:
-- `google-adk==1.15.1`: Google Agent Development Kit
+- `google-adk==1.17.0`: Google Agent Development Kit
 - `google-cloud-speech`: Google Cloud Speech-to-Text API
 - `pyaudio`: Audio I/O (requires PortAudio)
 - `pydub`: Audio manipulation (requires FFmpeg)

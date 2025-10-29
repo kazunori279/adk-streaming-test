@@ -1,4 +1,4 @@
-google-adk
+google-adk==1.17.0
 python-dotenv
 google-cloud-speech
 pyaudio

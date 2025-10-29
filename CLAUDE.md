@@ -17,7 +17,7 @@ This is a comprehensive Python testing framework for Google Agent Development Ki
 
 ### Technical Components
 - Python virtual environment in `.venv/`
-- Google ADK v1.6.1 for AI agent development
+- Google ADK v1.17.0 for AI agent development
 - Audio processing capabilities (PyAudio for I/O, pydub for conversion)
 - Google Cloud Speech-to-Text integration for voice validation
 - MCP (Model Context Protocol) configuration with GitHub server access
@@ -36,7 +36,7 @@ source .venv/bin/activate  # On macOS/Linux
 
 ### Dependencies
 Dependencies are managed through `requirements.txt`. Key dependencies include:
-- **google-adk==1.6.1**: Google Agent Development Kit with streaming support
+- **google-adk==1.17.0**: Google Agent Development Kit with streaming support
 - **google-cloud-speech**: Google Cloud Speech-to-Text API for voice transcription
 - **PyAudio**: Audio I/O library for real-time audio playback (requires PortAudio)
 - **pydub**: Audio format conversion and manipulation (requires FFmpeg)
@@ -157,14 +157,18 @@ Centralized configuration management:
 
 #### Google AI Studio
 
-- `gemini-live-2.5-flash-preview`: Latest live preview model
-- `gemini-2.0-flash-live-001`: Production live model
 - `gemini-2.0-flash-exp`: Experimental flash model
+- `gemini-2.0-flash-live-001`: Production-ready live model
+- `gemini-live-2.5-flash-preview`: Latest live preview with enhanced streaming
+- `gemini-2.5-flash-native-audio-preview-09-2025`: Native audio model
+- `gemini-2.5-flash-preview-native-audio-dialog`: Dialog-optimized native audio model
+- `gemini-2.5-flash-exp-native-audio-thinking-dialog`: Experimental thinking-mode native audio model
 
 #### Vertex AI
 
-- `gemini-live-2.5-flash-preview-native-audio`: Native audio processing
 - `gemini-2.0-flash-exp`: Experimental model on Vertex AI
+- `gemini-live-2.5-flash-preview-native-audio`: Native audio processing model
+- `gemini-live-2.5-flash-preview-native-audio-09-17`: Native audio model (September 2025 version)
 
 ### Audio Processing Flow
 
