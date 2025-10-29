@@ -1,0 +1,244 @@
+name: ADK Version Monitor
+
+on:
+  schedule:
+    # Run every 12 hours (midnight and noon UTC)
+    - cron: '0 0,12 * * *'
+  workflow_dispatch:  # Allow manual triggers
+    inputs:
+      force_run:
+        description: 'Force test run even if version unchanged'
+        required: false
+        default: 'false'
+
+jobs:
+  check-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for proper git operations
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg portaudio19-dev
+
+      - name: Check latest ADK version on PyPI
+        id: check_version
+        run: |
+          # Fetch latest version from PyPI
+          LATEST_VERSION=$(curl -s https://pypi.org/pypi/google-adk/json | python3 -c "import sys, json; print(json.load(sys.stdin)['info']['version'])")
+          echo "Latest PyPI version: $LATEST_VERSION"
+          echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+
+          # Read current tracked version
+          if [ -f current_adk_version.txt ]; then
+            CURRENT_VERSION=$(cat current_adk_version.txt)
+          else
+            CURRENT_VERSION="0.0.0"
+          fi
+          echo "Current tracked version: $CURRENT_VERSION"
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+          # Compare versions
+          if [ "$LATEST_VERSION" != "$CURRENT_VERSION" ]; then
+            echo "new_version_available=true" >> $GITHUB_OUTPUT
+            echo "New version detected: $LATEST_VERSION"
+          else
+            echo "new_version_available=false" >> $GITHUB_OUTPUT
+            echo "No new version available"
+          fi
+
+      - name: Check if test should run
+        id: should_run
+        run: |
+          if [ "${{ steps.check_version.outputs.new_version_available }}" == "true" ] || [ "${{ github.event.inputs.force_run }}" == "true" ]; then
+            echo "run_tests=true" >> $GITHUB_OUTPUT
+            echo "Tests will run"
+          else
+            echo "run_tests=false" >> $GITHUB_OUTPUT
+            echo "Skipping tests - no new version and not forced"
+          fi
+
+      - name: Install Python dependencies
+        if: steps.should_run.outputs.run_tests == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install google-adk==${{ steps.check_version.outputs.latest_version }}
+          pip install -r requirements.txt
+
+      - name: Setup Google Cloud authentication
+        if: steps.should_run.outputs.run_tests == 'true'
+        run: |
+          # Create service account key file for Vertex AI
+          echo '${{ secrets.GOOGLE_CLOUD_SERVICE_ACCOUNT_KEY }}' > /tmp/gcloud-key.json
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcloud-key.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcloud-key.json" >> $GITHUB_ENV
+
+      - name: Configure environment variables
+        if: steps.should_run.outputs.run_tests == 'true'
+        run: |
+          # Create .env file with credentials
+          cat > .env << EOF
+          GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}
+          GOOGLE_CLOUD_PROJECT=${{ secrets.GOOGLE_CLOUD_PROJECT }}
+          GOOGLE_CLOUD_LOCATION=${{ secrets.GOOGLE_CLOUD_LOCATION }}
+          EOF
+
+      - name: Run ADK streaming tests
+        if: steps.should_run.outputs.run_tests == 'true'
+        id: run_tests
+        continue-on-error: true
+        run: |
+          # Run tests in headless mode
+          GITHUB_ACTIONS=true python test_tool.py --headless
+
+          # Capture exit code
+          TEST_EXIT_CODE=$?
+          echo "test_exit_code=$TEST_EXIT_CODE" >> $GITHUB_OUTPUT
+
+          if [ $TEST_EXIT_CODE -eq 0 ]; then
+            echo "Tests completed successfully"
+          else
+            echo "Tests completed with failures"
+          fi
+
+      - name: Get test report details
+        if: steps.should_run.outputs.run_tests == 'true'
+        id: report_details
+        run: |
+          # Find the latest test report
+          REPORT_FILE=$(ls -t test_report_*.md 2>/dev/null | head -n 1)
+
+          if [ -n "$REPORT_FILE" ]; then
+            echo "report_file=$REPORT_FILE" >> $GITHUB_OUTPUT
+
+            # Extract success rate from report
+            SUCCESS_RATE=$(grep -oP 'Success Rate: \K[0-9.]+%' "$REPORT_FILE" | head -n 1 || echo "N/A")
+            echo "success_rate=$SUCCESS_RATE" >> $GITHUB_OUTPUT
+
+            # Count passed/failed tests
+            PASSED_TESTS=$(grep -oP '\K[0-9]+(?=/[0-9]+ tests passed)' "$REPORT_FILE" | head -n 1 || echo "0")
+            TOTAL_TESTS=$(grep -oP '[0-9]+/\K[0-9]+(?= tests passed)' "$REPORT_FILE" | head -n 1 || echo "0")
+            echo "passed_tests=$PASSED_TESTS" >> $GITHUB_OUTPUT
+            echo "total_tests=$TOTAL_TESTS" >> $GITHUB_OUTPUT
+
+            # Generate timestamp
+            TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M:%S UTC')
+            echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+          else
+            echo "No test report found"
+            echo "report_file=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update version tracking file
+        if: steps.should_run.outputs.run_tests == 'true'
+        run: |
+          echo "${{ steps.check_version.outputs.latest_version }}" > current_adk_version.txt
+
+      - name: Commit test results
+        if: steps.should_run.outputs.run_tests == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Add test report and version file
+          git add test_report_*.md current_adk_version.txt
+
+          # Create commit message
+          cat > /tmp/commit_msg.txt << EOF
+          Test results for google-adk v${{ steps.check_version.outputs.latest_version }}
+
+          - Tested on: ${{ steps.report_details.outputs.timestamp }}
+          - Platform: GitHub Actions (headless mode)
+          - Success Rate: ${{ steps.report_details.outputs.success_rate }}
+          - Tests Passed: ${{ steps.report_details.outputs.passed_tests }}/${{ steps.report_details.outputs.total_tests }}
+          - Report: ${{ steps.report_details.outputs.report_file }}
+
+          Automated test run triggered by ADK version monitor workflow.
+          EOF
+
+          git commit -F /tmp/commit_msg.txt
+          git push
+
+      - name: Create issue on test failures
+        if: steps.should_run.outputs.run_tests == 'true' && steps.run_tests.outputs.test_exit_code != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = '${{ steps.check_version.outputs.latest_version }}';
+            const successRate = '${{ steps.report_details.outputs.success_rate }}';
+            const passedTests = '${{ steps.report_details.outputs.passed_tests }}';
+            const totalTests = '${{ steps.report_details.outputs.total_tests }}';
+            const reportFile = '${{ steps.report_details.outputs.report_file }}';
+            const timestamp = '${{ steps.report_details.outputs.timestamp }}';
+
+            const failedTests = totalTests - passedTests;
+
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `google-adk v${version} test failures detected`,
+              body: `## Test Failure Summary
+
+            Automated testing detected failures with the latest google-adk release.
+
+            ### Version Information
+            - **ADK Version**: ${version}
+            - **Test Date**: ${timestamp}
+            - **Platform**: GitHub Actions (headless mode)
+
+            ### Test Results
+            - **Success Rate**: ${successRate}
+            - **Tests Passed**: ${passedTests}/${totalTests}
+            - **Tests Failed**: ${failedTests}
+
+            ### Test Report
+            See full test report with detailed error traces and transcriptions: [${reportFile}](../../blob/main/${reportFile})
+
+            ### Next Steps
+            1. Review the test report for detailed error information
+            2. Check for breaking changes in ADK release notes
+            3. Update test code if needed for API changes
+            4. Re-run tests after fixes: \`gh workflow run adk-version-monitor.yml -f force_run=true\`
+
+            ---
+            *This issue was automatically created by the ADK Version Monitor workflow.*
+            `,
+              labels: ['automated-test', 'test-failure', 'google-adk']
+            });
+
+            core.info(`Created issue #${issue.data.number}`);
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## ADK Version Monitor Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Latest PyPI Version**: ${{ steps.check_version.outputs.latest_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Previous Tracked Version**: ${{ steps.check_version.outputs.current_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**New Version Available**: ${{ steps.check_version.outputs.new_version_available }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.should_run.outputs.run_tests }}" == "true" ]; then
+            echo "### Test Results" >> $GITHUB_STEP_SUMMARY
+            echo "- **Success Rate**: ${{ steps.report_details.outputs.success_rate }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Tests Passed**: ${{ steps.report_details.outputs.passed_tests }}/${{ steps.report_details.outputs.total_tests }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Report**: ${{ steps.report_details.outputs.report_file }}" >> $GITHUB_STEP_SUMMARY
+
+            if [ "${{ steps.run_tests.outputs.test_exit_code }}" != "0" ]; then
+              echo "- **Status**: :x: Some tests failed" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- **Status**: :white_check_mark: All tests passed" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "**Status**: No tests run (no new version detected)" >> $GITHUB_STEP_SUMMARY
+          fi

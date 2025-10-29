@@ -135,6 +135,147 @@ python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp --region u
 # Region priority: --region parameter > GOOGLE_CLOUD_LOCATION env var > us-central1 default
 ```
 
+### Headless Mode (CI/GitHub Actions)
+```bash
+# Run tests without audio playback (for CI environments)
+python test_tool.py --headless
+
+# Headless mode:
+# - Skips audio playback to speakers
+# - Preserves all validation functionality
+# - Generates complete test reports
+# - Compatible with GitHub Actions and other CI systems
+```
+
+## Automated Testing (GitHub Actions)
+
+This repository includes an automated workflow that monitors PyPI for new Google ADK releases and automatically runs comprehensive tests.
+
+### Workflow Features
+
+- **Automatic Version Detection**: Checks PyPI every 12 hours for new `google-adk` releases
+- **Smart Testing**: Runs tests only when a new version is detected
+- **Comprehensive Coverage**: Tests all platforms (Google AI Studio + Vertex AI) and models
+- **Automated Reporting**: Commits test reports with detailed results and analytics
+- **Failure Notifications**: Creates GitHub issues when tests fail
+- **Manual Triggers**: Supports manual workflow runs with force option
+
+### Workflow Configuration
+
+The workflow is defined in `.github/workflows/adk-version-monitor.yml` and runs:
+- **Scheduled**: Every 12 hours (midnight and noon UTC)
+- **Manual**: Via GitHub Actions UI or `gh workflow run` command
+
+### Required GitHub Secrets
+
+Configure these secrets in your repository settings (Settings > Secrets and variables > Actions):
+
+| Secret Name | Description | Required For |
+|-------------|-------------|--------------|
+| `GOOGLE_API_KEY` | Google AI Studio API key | Google AI Studio tests |
+| `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID | Vertex AI tests |
+| `GOOGLE_CLOUD_SERVICE_ACCOUNT_KEY` | Service account JSON key (full content) | Vertex AI authentication |
+| `GOOGLE_CLOUD_LOCATION` | Default region (e.g., `us-central1`) | Vertex AI tests (optional) |
+
+### Setting Up Secrets
+
+1. **Google AI Studio API Key**:
+   ```bash
+   # Get your API key from https://aistudio.google.com/app/apikey
+   gh secret set GOOGLE_API_KEY
+   ```
+
+2. **Google Cloud Project**:
+   ```bash
+   gh secret set GOOGLE_CLOUD_PROJECT
+   # Enter your project ID (e.g., my-project-12345)
+   ```
+
+3. **Service Account Key**:
+   ```bash
+   # Create service account with necessary permissions
+   gcloud iam service-accounts create adk-tester \
+     --display-name="ADK Test Runner"
+
+   # Grant required permissions
+   gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+     --member="serviceAccount:adk-tester@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+     --role="roles/aiplatform.user"
+
+   # Create and download key
+   gcloud iam service-accounts keys create key.json \
+     --iam-account=adk-tester@YOUR_PROJECT_ID.iam.gserviceaccount.com
+
+   # Set secret (paste entire JSON content when prompted)
+   gh secret set GOOGLE_CLOUD_SERVICE_ACCOUNT_KEY < key.json
+
+   # Delete local key file for security
+   rm key.json
+   ```
+
+4. **Cloud Location** (optional):
+   ```bash
+   gh secret set GOOGLE_CLOUD_LOCATION
+   # Enter region (e.g., us-central1, europe-west1)
+   ```
+
+### Workflow Behavior
+
+#### When New Version Detected
+
+1. **Version Check**: Compares PyPI version with `current_adk_version.txt`
+2. **Test Execution**: Runs `python test_tool.py --headless` with new version
+3. **Report Generation**: Creates timestamped test report (e.g., `test_report_us-central1_20251030_123456.md`)
+4. **Auto-Commit**: Commits report and updates version file with message:
+   ```
+   Test results for google-adk v1.18.0
+
+   - Tested on: 2025-10-30 12:34:56 UTC
+   - Platform: GitHub Actions (headless mode)
+   - Success Rate: 85%
+   - Tests Passed: 17/20
+   - Report: test_report_us-central1_20251030_123456.md
+   ```
+5. **Issue Creation**: If tests fail, creates issue with failure summary and links
+
+#### When No New Version
+
+- Workflow exits early with "No new version detected"
+- No tests run, no commits made
+- Minimal resource usage
+
+### Manual Workflow Triggers
+
+```bash
+# Run workflow manually (tests only if new version available)
+gh workflow run adk-version-monitor.yml
+
+# Force test run even if version unchanged
+gh workflow run adk-version-monitor.yml -f force_run=true
+
+# View workflow runs
+gh run list --workflow=adk-version-monitor.yml
+
+# View specific run logs
+gh run view <run-id> --log
+```
+
+### Version Tracking
+
+The file `current_adk_version.txt` tracks the last tested ADK version:
+- Updated automatically after successful test runs
+- Used to detect new releases
+- Currently tracking: `1.17.0`
+
+### Benefits
+
+- **Zero Maintenance**: Automatic testing without manual intervention
+- **Early Detection**: Catch breaking changes immediately after release
+- **Historical Tracking**: All test reports committed to repository
+- **Version Audit Trail**: Clear record of tested versions
+- **Multi-Platform Coverage**: Tests both Google AI Studio and Vertex AI
+- **Comprehensive Reports**: Full analytics, transcriptions, and error traces
+
 ## Test Methodology
 
 ### Test Question
