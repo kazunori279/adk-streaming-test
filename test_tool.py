@@ -167,9 +167,9 @@ class ADKStreamingTester:
             tools=[google_search],
         )
 
-        self.runner = InMemoryRunner(app_name="ADK Streaming Test", agent=agent)
+        self.runner = InMemoryRunner(app_name="agents", agent=agent)
         self.session = await self.runner.session_service.create_session(
-            app_name="ADK Streaming Test", user_id="test_user"
+            app_name="agents", user_id="test_user"
         )
         return agent
 
