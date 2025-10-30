@@ -1,7 +1,7 @@
 # ADK Bidirectional Streaming Test Report
 
 ## Test Summary
-- **Test Date**: 2025-10-30 03:01:26
+- **Test Date**: 2025-10-30 01:41:26
 - **Test Type**: COMBINED (Text + Voice)
 - **Google ADK Version**: 1.17.0
 - **Total Tests**: 18
@@ -74,13 +74,13 @@
 
 ### Google AI Studio
 
-**gemini-2.0-flash-exp**: "it is 2:58 a.m. in Tokyo Japan"
+**gemini-2.0-flash-exp**: "it is 1:47 a.m. on Thursday October 30th 2025 in Tokyo"
 
-**gemini-2.0-flash-live-001**: "it is 2:58 a.m. in Tokyo Japan"
+**gemini-2.0-flash-live-001**: "it is 10:39 a.m. in Tokyo Japan"
 
-**gemini-live-2.5-flash-preview**: "the current time in Tokyo Japan is 2:58 a.m. on Thursday October 30th 2025"
+**gemini-live-2.5-flash-preview**: "the current time in Tokyo Japan is 10:39 a.m. Thursday October 3025"
 
-**gemini-2.5-flash-native-audio-preview-09-2025**: "the current time in Tokyo Japan is 259 a.m."
+**gemini-2.5-flash-native-audio-preview-09-2025**: "the current time in Tokyo Japan is 10:40 a.m. on Thursday October 30th 2025"
 
 **gemini-2.5-flash-preview-native-audio-dialog**: ""
 
@@ -88,11 +88,11 @@
 
 ### Vertex AI
 
-**gemini-2.0-flash-exp**: "it is 3:00 a.m. in Tokyo"
+**gemini-2.0-flash-exp**: "it's 10:40 a.m. in Tokyo"
 
-**gemini-live-2.5-flash-preview-native-audio**: "it is currently 3:00 a.m. in Tokyo Japan"
+**gemini-live-2.5-flash-preview-native-audio**: "the current time in Tokyo Japan is 10:41 a.m. Tokyo is located in the Asia Tokyo time zone and does not observe Daylight Saving Time"
 
-**gemini-live-2.5-flash-preview-native-audio-09-17**: "the current time in Tokyo Japan is 301 a.m."
+**gemini-live-2.5-flash-preview-native-audio-09-17**: "the current time in Tokyo Japan is 10:41 a.m."
 
 ## Error Traces
 
@@ -102,37 +102,35 @@
 
 ```
 Traceback (most recent call last):
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 213, in test_text_chat
+  File "/home/runner/work/adk-streaming-test/adk-streaming-test/test_tool.py", line 224, in test_text_chat
     full_response = await self._collect_audio_transcription_response(live_events)
                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 279, in _collect_audio_transcription_response
+  File "/home/runner/work/adk-streaming-test/adk-streaming-test/test_tool.py", line 290, in _collect_audio_transcription_response
     async for event in live_events:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 855, in run_live
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/runners.py", line 855, in run_live
     async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 652, in _exec_with_plugin
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/runners.py", line 652, in _exec_with_plugin
     async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 844, in execute
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/runners.py", line 844, in execute
     async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 327, in run_live
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/agents/base_agent.py", line 327, in run_live
     async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 428, in _run_live_impl
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/agents/llm_agent.py", line 428, in _run_live_impl
     async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 129, in run_live
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 129, in run_live
     async with llm.connect(llm_request) as llm_connection:
-               ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/contextlib.py", line 210, in __aenter__
     return await anext(self.gen)
            ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 285, in connect
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/models/google_llm.py", line 285, in connect
     async with self._live_api_client.aio.live.connect(
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/contextlib.py", line 210, in __aenter__
     return await anext(self.gen)
            ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/genai/live.py", line 1075, in connect
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/genai/live.py", line 1085, in connect
     raw_response = await ws.recv(decode=False)
                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/websockets/asyncio/connection.py", line 322, in recv
     raise self.protocol.close_exc from self.recv_exc
 websockets.exceptions.ConnectionClosedError: received 1008 (policy violation) models/gemini-2.5-flash-preview-native-audio-dialog is not found for API version v1alpha, or is not supported for bidiGener; then sent 1008 (policy violation) models/gemini-2.5-flash-preview-native-audio-dialog is not found for API version v1alpha, or is not supported for bidiGener
 ```
@@ -141,37 +139,35 @@ websockets.exceptions.ConnectionClosedError: received 1008 (policy violation) mo
 
 ```
 Traceback (most recent call last):
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 213, in test_text_chat
+  File "/home/runner/work/adk-streaming-test/adk-streaming-test/test_tool.py", line 224, in test_text_chat
     full_response = await self._collect_audio_transcription_response(live_events)
                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 279, in _collect_audio_transcription_response
+  File "/home/runner/work/adk-streaming-test/adk-streaming-test/test_tool.py", line 290, in _collect_audio_transcription_response
     async for event in live_events:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 855, in run_live
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/runners.py", line 855, in run_live
     async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 652, in _exec_with_plugin
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/runners.py", line 652, in _exec_with_plugin
     async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 844, in execute
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/runners.py", line 844, in execute
     async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 327, in run_live
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/agents/base_agent.py", line 327, in run_live
     async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 428, in _run_live_impl
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/agents/llm_agent.py", line 428, in _run_live_impl
     async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 129, in run_live
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 129, in run_live
     async with llm.connect(llm_request) as llm_connection:
-               ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/contextlib.py", line 210, in __aenter__
     return await anext(self.gen)
            ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 285, in connect
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/models/google_llm.py", line 285, in connect
     async with self._live_api_client.aio.live.connect(
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/contextlib.py", line 210, in __aenter__
     return await anext(self.gen)
            ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/genai/live.py", line 1075, in connect
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/genai/live.py", line 1085, in connect
     raw_response = await ws.recv(decode=False)
                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/websockets/asyncio/connection.py", line 322, in recv
     raise self.protocol.close_exc from self.recv_exc
 websockets.exceptions.ConnectionClosedError: received 1008 (policy violation) models/gemini-2.5-flash-exp-native-audio-thinking-dialog is not found for API version v1alpha, or is not supported for bidi; then sent 1008 (policy violation) models/gemini-2.5-flash-exp-native-audio-thinking-dialog is not found for API version v1alpha, or is not supported for bidi
 ```
@@ -180,37 +176,35 @@ websockets.exceptions.ConnectionClosedError: received 1008 (policy violation) mo
 
 ```
 Traceback (most recent call last):
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 328, in test_voice_chat
+  File "/home/runner/work/adk-streaming-test/adk-streaming-test/test_tool.py", line 339, in test_voice_chat
     audio_response, text_response = await self._collect_audio_response(live_events)
                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 348, in _collect_audio_response
+  File "/home/runner/work/adk-streaming-test/adk-streaming-test/test_tool.py", line 359, in _collect_audio_response
     async for event in live_events:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 855, in run_live
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/runners.py", line 855, in run_live
     async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 652, in _exec_with_plugin
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/runners.py", line 652, in _exec_with_plugin
     async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 844, in execute
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/runners.py", line 844, in execute
     async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 327, in run_live
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/agents/base_agent.py", line 327, in run_live
     async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 428, in _run_live_impl
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/agents/llm_agent.py", line 428, in _run_live_impl
     async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 129, in run_live
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 129, in run_live
     async with llm.connect(llm_request) as llm_connection:
-               ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/contextlib.py", line 210, in __aenter__
     return await anext(self.gen)
            ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 285, in connect
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/models/google_llm.py", line 285, in connect
     async with self._live_api_client.aio.live.connect(
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/contextlib.py", line 210, in __aenter__
     return await anext(self.gen)
            ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/genai/live.py", line 1075, in connect
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/genai/live.py", line 1085, in connect
     raw_response = await ws.recv(decode=False)
                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/websockets/asyncio/connection.py", line 322, in recv
     raise self.protocol.close_exc from self.recv_exc
 websockets.exceptions.ConnectionClosedError: received 1008 (policy violation) models/gemini-2.5-flash-preview-native-audio-dialog is not found for API version v1alpha, or is not supported for bidiGener; then sent 1008 (policy violation) models/gemini-2.5-flash-preview-native-audio-dialog is not found for API version v1alpha, or is not supported for bidiGener
 ```
@@ -219,37 +213,35 @@ websockets.exceptions.ConnectionClosedError: received 1008 (policy violation) mo
 
 ```
 Traceback (most recent call last):
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 328, in test_voice_chat
+  File "/home/runner/work/adk-streaming-test/adk-streaming-test/test_tool.py", line 339, in test_voice_chat
     audio_response, text_response = await self._collect_audio_response(live_events)
                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 348, in _collect_audio_response
+  File "/home/runner/work/adk-streaming-test/adk-streaming-test/test_tool.py", line 359, in _collect_audio_response
     async for event in live_events:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 855, in run_live
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/runners.py", line 855, in run_live
     async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 652, in _exec_with_plugin
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/runners.py", line 652, in _exec_with_plugin
     async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 844, in execute
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/runners.py", line 844, in execute
     async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 327, in run_live
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/agents/base_agent.py", line 327, in run_live
     async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 428, in _run_live_impl
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/agents/llm_agent.py", line 428, in _run_live_impl
     async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 129, in run_live
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 129, in run_live
     async with llm.connect(llm_request) as llm_connection:
-               ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/contextlib.py", line 210, in __aenter__
     return await anext(self.gen)
            ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 285, in connect
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/adk/models/google_llm.py", line 285, in connect
     async with self._live_api_client.aio.live.connect(
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/contextlib.py", line 210, in __aenter__
     return await anext(self.gen)
            ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/genai/live.py", line 1075, in connect
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/google/genai/live.py", line 1085, in connect
     raw_response = await ws.recv(decode=False)
                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
+  File "/opt/hostedtoolcache/Python/3.11.13/x64/lib/python3.11/site-packages/websockets/asyncio/connection.py", line 322, in recv
     raise self.protocol.close_exc from self.recv_exc
 websockets.exceptions.ConnectionClosedError: received 1008 (policy violation) models/gemini-2.5-flash-exp-native-audio-thinking-dialog is not found for API version v1alpha, or is not supported for bidi; then sent 1008 (policy violation) models/gemini-2.5-flash-exp-native-audio-thinking-dialog is not found for API version v1alpha, or is not supported for bidi
 ```

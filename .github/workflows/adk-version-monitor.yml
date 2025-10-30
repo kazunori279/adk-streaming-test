@@ -147,14 +147,21 @@ jobs:
         run: |
           echo "${{ steps.check_version.outputs.latest_version }}" > current_adk_version.txt
 
+      - name: Copy report to test_report.md
+        if: steps.should_run.outputs.run_tests == 'true' && steps.report_details.outputs.report_file != ''
+        run: |
+          # Copy the timestamped report to test_report.md for easy reference
+          cp "${{ steps.report_details.outputs.report_file }}" test_report.md
+          echo "Copied ${{ steps.report_details.outputs.report_file }} to test_report.md"
+
       - name: Commit test results
         if: steps.should_run.outputs.run_tests == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Add test report and version file
-          git add test_report_*.md current_adk_version.txt
+          # Add test reports (timestamped + latest) and version file
+          git add test_report_*.md test_report.md current_adk_version.txt
 
           # Create commit message
           cat > /tmp/commit_msg.txt << EOF
