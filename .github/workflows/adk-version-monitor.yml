@@ -14,6 +14,10 @@ on:
 jobs:
   check-and-test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # For committing test reports
+      issues: write    # For creating issues on failures
+      id-token: write  # For Workload Identity Federation
 
     steps:
       - name: Checkout repository
@@ -75,13 +79,12 @@ jobs:
           pip install google-adk==${{ steps.check_version.outputs.latest_version }}
           pip install -r requirements.txt
 
-      - name: Setup Google Cloud authentication
+      - name: Authenticate to Google Cloud
         if: steps.should_run.outputs.run_tests == 'true'
-        run: |
-          # Create service account key file for Vertex AI
-          echo '${{ secrets.GOOGLE_CLOUD_SERVICE_ACCOUNT_KEY }}' > /tmp/gcloud-key.json
-          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcloud-key.json
-          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcloud-key.json" >> $GITHUB_ENV
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
       - name: Configure environment variables
         if: steps.should_run.outputs.run_tests == 'true'

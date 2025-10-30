@@ -174,50 +174,115 @@ Configure these secrets in your repository settings (Settings > Secrets and vari
 |-------------|-------------|--------------|
 | `GOOGLE_API_KEY` | Google AI Studio API key | Google AI Studio tests |
 | `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID | Vertex AI tests |
-| `GOOGLE_CLOUD_SERVICE_ACCOUNT_KEY` | Service account JSON key (full content) | Vertex AI authentication |
+| `WORKLOAD_IDENTITY_PROVIDER` | Workload Identity Provider resource name | Vertex AI authentication |
+| `SERVICE_ACCOUNT_EMAIL` | Service account email address | Vertex AI authentication |
 | `GOOGLE_CLOUD_LOCATION` | Default region (e.g., `us-central1`) | Vertex AI tests (optional) |
 
 ### Setting Up Secrets
 
-1. **Google AI Studio API Key**:
-   ```bash
-   # Get your API key from https://aistudio.google.com/app/apikey
-   gh secret set GOOGLE_API_KEY
-   ```
+#### 1. Google AI Studio API Key
+```bash
+# Get your API key from https://aistudio.google.com/app/apikey
+gh secret set GOOGLE_API_KEY
+# Paste your API key when prompted
+```
 
-2. **Google Cloud Project**:
-   ```bash
-   gh secret set GOOGLE_CLOUD_PROJECT
-   # Enter your project ID (e.g., my-project-12345)
-   ```
+#### 2. Google Cloud Project
+```bash
+gh secret set GOOGLE_CLOUD_PROJECT
+# Enter your project ID (e.g., my-project-12345)
+```
 
-3. **Service Account Key**:
-   ```bash
-   # Create service account with necessary permissions
-   gcloud iam service-accounts create adk-tester \
-     --display-name="ADK Test Runner"
+#### 3. Workload Identity Federation Setup
 
-   # Grant required permissions
-   gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
-     --member="serviceAccount:adk-tester@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
-     --role="roles/aiplatform.user"
+This uses Workload Identity Federation (recommended by Google) instead of service account keys, which is more secure and doesn't require managing keys.
 
-   # Create and download key
-   gcloud iam service-accounts keys create key.json \
-     --iam-account=adk-tester@YOUR_PROJECT_ID.iam.gserviceaccount.com
+**Step 3a: Create Service Account**
+```bash
+# Set your project ID
+export PROJECT_ID="your-project-id"
 
-   # Set secret (paste entire JSON content when prompted)
-   gh secret set GOOGLE_CLOUD_SERVICE_ACCOUNT_KEY < key.json
+# Create service account
+gcloud iam service-accounts create adk-tester \
+  --project="${PROJECT_ID}" \
+  --display-name="ADK Test Runner"
 
-   # Delete local key file for security
-   rm key.json
-   ```
+# Grant required permissions for Vertex AI
+gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+  --member="serviceAccount:adk-tester@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --role="roles/aiplatform.user"
+```
 
-4. **Cloud Location** (optional):
-   ```bash
-   gh secret set GOOGLE_CLOUD_LOCATION
-   # Enter region (e.g., us-central1, europe-west1)
-   ```
+**Step 3b: Create Workload Identity Pool**
+```bash
+# Create Workload Identity Pool
+gcloud iam workload-identity-pools create "github-actions-pool" \
+  --project="${PROJECT_ID}" \
+  --location="global" \
+  --display-name="GitHub Actions Pool"
+
+# Get the pool ID (save this for later)
+gcloud iam workload-identity-pools describe "github-actions-pool" \
+  --project="${PROJECT_ID}" \
+  --location="global" \
+  --format="value(name)"
+```
+
+**Step 3c: Create Workload Identity Provider**
+```bash
+# Replace YOUR_GITHUB_ORG and YOUR_REPO_NAME with your values
+export GITHUB_REPO="YOUR_GITHUB_ORG/YOUR_REPO_NAME"
+
+gcloud iam workload-identity-pools providers create-oidc "github-provider" \
+  --project="${PROJECT_ID}" \
+  --location="global" \
+  --workload-identity-pool="github-actions-pool" \
+  --display-name="GitHub Provider" \
+  --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner" \
+  --attribute-condition="assertion.repository_owner == '$(echo ${GITHUB_REPO} | cut -d'/' -f1)'" \
+  --issuer-uri="https://token.actions.githubusercontent.com"
+```
+
+**Step 3d: Allow GitHub Actions to Impersonate Service Account**
+```bash
+gcloud iam service-accounts add-iam-policy-binding "adk-tester@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --project="${PROJECT_ID}" \
+  --role="roles/iam.workloadIdentityUser" \
+  --member="principalSet://iam.googleapis.com/projects/$(gcloud projects describe ${PROJECT_ID} --format='value(projectNumber)')/locations/global/workloadIdentityPools/github-actions-pool/attribute.repository/${GITHUB_REPO}"
+```
+
+**Step 3e: Get Values for GitHub Secrets**
+```bash
+# Get Workload Identity Provider (save this value)
+gcloud iam workload-identity-pools providers describe "github-provider" \
+  --project="${PROJECT_ID}" \
+  --location="global" \
+  --workload-identity-pool="github-actions-pool" \
+  --format="value(name)"
+
+# This will output something like:
+# projects/123456789/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
+
+# Service account email is:
+# adk-tester@${PROJECT_ID}.iam.gserviceaccount.com
+```
+
+**Step 3f: Set GitHub Secrets**
+```bash
+# Set Workload Identity Provider (paste the full resource name from step 3e)
+gh secret set WORKLOAD_IDENTITY_PROVIDER
+# Example: projects/123456789/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider
+
+# Set Service Account Email
+gh secret set SERVICE_ACCOUNT_EMAIL
+# Example: adk-tester@your-project-id.iam.gserviceaccount.com
+```
+
+#### 4. Cloud Location (Optional)
+```bash
+gh secret set GOOGLE_CLOUD_LOCATION
+# Enter region (e.g., us-central1, europe-west1)
+```
 
 ### Workflow Behavior
 
