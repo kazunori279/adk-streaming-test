@@ -1,21 +1,21 @@
 # ADK Bidirectional Streaming Test Report
 
 ## Test Summary
-- **Test Date**: 2025-11-06 13:33:52
+- **Test Date**: 2025-11-07 04:52:58
 - **Test Type**: COMBINED (Text + Voice)
 - **Google ADK Version**: 1.18.0
-- **Total Tests**: 18
+- **Total Tests**: 14
 - **Passed Tests**: 12
-- **Failed Tests**: 6
-- **Success Rate**: 66.7%
+- **Failed Tests**: 2
+- **Success Rate**: 85.7%
 
 ### Test Type Breakdown
-- **Text Tests**: 6/9 passed (66.7%)
-- **Voice Tests**: 6/9 passed (66.7%)
+- **Text Tests**: 6/7 passed (85.7%)
+- **Voice Tests**: 6/7 passed (85.7%)
 
 ### Retry Statistics
-- **Tests requiring retries**: 7/18
-- **Total retry attempts**: 13
+- **Tests requiring retries**: 2/14
+- **Total retry attempts**: 4
 
 ## Environment Configuration
 - **Google Cloud Project**: gcp-samples-ic0
@@ -46,14 +46,6 @@
   - Text (audio transcript): ✅ PASS
   - Voice: ✅ PASS
 
-**gemini-2.5-flash-preview-native-audio-dialog**:
-  - Text (audio transcript): ❌ FAIL (retries: 2) - Reason: Exception: received 1008 (policy violation) models/gemini-2.5-flash-preview-native-audio-dialog is not found for API version v1alpha, or is not supported for bidiGener; then sent 1008 (policy violation) models/gemini-2.5-flash-preview-native-audio-dialog is not found for API version v1alpha, or is not supported for bidiGener
-  - Voice: ❌ FAIL (retries: 2) - Reason: Exception: received 1008 (policy violation) models/gemini-2.5-flash-preview-native-audio-dialog is not found for API version v1alpha, or is not supported for bidiGener; then sent 1008 (policy violation) models/gemini-2.5-flash-preview-native-audio-dialog is not found for API version v1alpha, or is not supported for bidiGener
-
-**gemini-2.5-flash-exp-native-audio-thinking-dialog**:
-  - Text (audio transcript): ❌ FAIL (retries: 2) - Reason: Exception: received 1008 (policy violation) models/gemini-2.5-flash-exp-native-audio-thinking-dialog is not found for API version v1alpha, or is not supported for bidi; then sent 1008 (policy violation) models/gemini-2.5-flash-exp-native-audio-thinking-dialog is not found for API version v1alpha, or is not supported for bidi
-  - Voice: ❌ FAIL (retries: 2) - Reason: Exception: received 1008 (policy violation) models/gemini-2.5-flash-exp-native-audio-thinking-dialog is not found for API version v1alpha, or is not supported for bidi; then sent 1008 (policy violation) models/gemini-2.5-flash-exp-native-audio-thinking-dialog is not found for API version v1alpha, or is not supported for bidi
-
 
 ### Vertex AI
 
@@ -66,7 +58,7 @@
   - Voice: ✅ PASS
 
 **gemini-live-2.5-flash-preview-native-audio-09-17**:
-  - Text (audio transcript): ✅ PASS (retries: 1)
+  - Text (audio transcript): ✅ PASS
   - Voice: ✅ PASS
 
 
@@ -74,185 +66,23 @@
 
 ### Google AI Studio
 
-**gemini-2.0-flash-exp**: "it is 1:30 p.m. in Tokyo Japan"
+**gemini-2.0-flash-exp**: "it is 4:50 a.m. in Tokyo Japan"
 
-**gemini-2.0-flash-live-001**: "right now it's 1:30 p.m. in Tokyo Japan"
+**gemini-2.0-flash-live-001**: "it is 4500 a.m. in Tokyo Japan"
 
-**gemini-live-2.5-flash-preview**: "the current time in Tokyo Japan is 1 131 p.m. and the time zone is Asia Tokyo"
+**gemini-live-2.5-flash-preview**: "the current time in Tokyo Japan is 4:50 a.m. on Friday November 7th 2025 Tokyo is in the Japan Standard time jst zone which is UTC +9"
 
-**gemini-2.5-flash-native-audio-preview-09-2025**: "the current time in Tokyo Japan is 1 131 p.m."
-
-**gemini-2.5-flash-preview-native-audio-dialog**: ""
-
-**gemini-2.5-flash-exp-native-audio-thinking-dialog**: ""
+**gemini-2.5-flash-native-audio-preview-09-2025**: "the current time in Tokyo Japan is 451 a.m."
 
 ### Vertex AI
 
 **gemini-2.0-flash-exp**: ""
 
-**gemini-live-2.5-flash-preview-native-audio**: "it is 1:33 p.m. in Tokyo right now"
+**gemini-live-2.5-flash-preview-native-audio**: "the current time in Tokyo Japan is 452 a.m. on November 7th 2025"
 
-**gemini-live-2.5-flash-preview-native-audio-09-17**: "the current time in Tokyo Japan is 1 133 p.m."
+**gemini-live-2.5-flash-preview-native-audio-09-17**: "it is 452 a.m. in Tokyo Japan"
 
 ## Error Traces
-
-### Google AI Studio
-
-#### gemini-2.5-flash-preview-native-audio-dialog (text)
-
-```
-Traceback (most recent call last):
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 233, in test_text_chat
-    full_response = await self._collect_audio_transcription_response(live_events)
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 299, in _collect_audio_transcription_response
-    async for event in live_events:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 856, in run_live
-    async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 653, in _exec_with_plugin
-    async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 845, in execute
-    async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 327, in run_live
-    async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 462, in _run_live_impl
-    async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 129, in run_live
-    async with llm.connect(llm_request) as llm_connection:
-               ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
-    return await anext(self.gen)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 285, in connect
-    async with self._live_api_client.aio.live.connect(
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
-    return await anext(self.gen)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/genai/live.py", line 1075, in connect
-    raw_response = await ws.recv(decode=False)
-                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
-    raise self.protocol.close_exc from self.recv_exc
-websockets.exceptions.ConnectionClosedError: received 1008 (policy violation) models/gemini-2.5-flash-preview-native-audio-dialog is not found for API version v1alpha, or is not supported for bidiGener; then sent 1008 (policy violation) models/gemini-2.5-flash-preview-native-audio-dialog is not found for API version v1alpha, or is not supported for bidiGener
-```
-
-#### gemini-2.5-flash-exp-native-audio-thinking-dialog (text)
-
-```
-Traceback (most recent call last):
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 233, in test_text_chat
-    full_response = await self._collect_audio_transcription_response(live_events)
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 299, in _collect_audio_transcription_response
-    async for event in live_events:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 856, in run_live
-    async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 653, in _exec_with_plugin
-    async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 845, in execute
-    async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 327, in run_live
-    async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 462, in _run_live_impl
-    async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 129, in run_live
-    async with llm.connect(llm_request) as llm_connection:
-               ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
-    return await anext(self.gen)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 285, in connect
-    async with self._live_api_client.aio.live.connect(
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
-    return await anext(self.gen)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/genai/live.py", line 1075, in connect
-    raw_response = await ws.recv(decode=False)
-                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
-    raise self.protocol.close_exc from self.recv_exc
-websockets.exceptions.ConnectionClosedError: received 1008 (policy violation) models/gemini-2.5-flash-exp-native-audio-thinking-dialog is not found for API version v1alpha, or is not supported for bidi; then sent 1008 (policy violation) models/gemini-2.5-flash-exp-native-audio-thinking-dialog is not found for API version v1alpha, or is not supported for bidi
-```
-
-#### gemini-2.5-flash-preview-native-audio-dialog (voice)
-
-```
-Traceback (most recent call last):
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 348, in test_voice_chat
-    audio_response, text_response = await self._collect_audio_response(live_events)
-                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 368, in _collect_audio_response
-    async for event in live_events:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 856, in run_live
-    async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 653, in _exec_with_plugin
-    async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 845, in execute
-    async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 327, in run_live
-    async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 462, in _run_live_impl
-    async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 129, in run_live
-    async with llm.connect(llm_request) as llm_connection:
-               ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
-    return await anext(self.gen)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 285, in connect
-    async with self._live_api_client.aio.live.connect(
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
-    return await anext(self.gen)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/genai/live.py", line 1075, in connect
-    raw_response = await ws.recv(decode=False)
-                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
-    raise self.protocol.close_exc from self.recv_exc
-websockets.exceptions.ConnectionClosedError: received 1008 (policy violation) models/gemini-2.5-flash-preview-native-audio-dialog is not found for API version v1alpha, or is not supported for bidiGener; then sent 1008 (policy violation) models/gemini-2.5-flash-preview-native-audio-dialog is not found for API version v1alpha, or is not supported for bidiGener
-```
-
-#### gemini-2.5-flash-exp-native-audio-thinking-dialog (voice)
-
-```
-Traceback (most recent call last):
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 348, in test_voice_chat
-    audio_response, text_response = await self._collect_audio_response(live_events)
-                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 368, in _collect_audio_response
-    async for event in live_events:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 856, in run_live
-    async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 653, in _exec_with_plugin
-    async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 845, in execute
-    async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 327, in run_live
-    async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 462, in _run_live_impl
-    async for event in agen:
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 129, in run_live
-    async with llm.connect(llm_request) as llm_connection:
-               ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
-    return await anext(self.gen)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 285, in connect
-    async with self._live_api_client.aio.live.connect(
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/contextlib.py", line 210, in __aenter__
-    return await anext(self.gen)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/genai/live.py", line 1075, in connect
-    raw_response = await ws.recv(decode=False)
-                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/websockets/asyncio/connection.py", line 322, in recv
-    raise self.protocol.close_exc from self.recv_exc
-websockets.exceptions.ConnectionClosedError: received 1008 (policy violation) models/gemini-2.5-flash-exp-native-audio-thinking-dialog is not found for API version v1alpha, or is not supported for bidi; then sent 1008 (policy violation) models/gemini-2.5-flash-exp-native-audio-thinking-dialog is not found for API version v1alpha, or is not supported for bidi
-```
 
 ### Vertex AI
 
@@ -260,10 +90,10 @@ websockets.exceptions.ConnectionClosedError: received 1008 (policy violation) mo
 
 ```
 Traceback (most recent call last):
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 235, in test_text_chat
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 233, in test_text_chat
     full_response = await self._collect_text_response(live_events)
                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 285, in _collect_text_response
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 283, in _collect_text_response
     async for event in live_events:
   File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 856, in run_live
     async for event in agen:
@@ -299,10 +129,10 @@ websockets.exceptions.ConnectionClosedError: received 1007 (invalid frame payloa
 
 ```
 Traceback (most recent call last):
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 348, in test_voice_chat
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 346, in test_voice_chat
     audio_response, text_response = await self._collect_audio_response(live_events)
                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 368, in _collect_audio_response
+  File "/Users/kazsato/Documents/GitHub/adk-streaming-test/test_tool.py", line 366, in _collect_audio_response
     async for event in live_events:
   File "/Users/kazsato/Documents/GitHub/adk-streaming-test/.venv/lib/python3.12/site-packages/google/adk/runners.py", line 856, in run_live
     async for event in agen:
@@ -370,14 +200,6 @@ websockets.exceptions.ConnectionClosedError: received 1007 (invalid frame payloa
 
 ## Failed Test Analysis
 
-- **gemini-2.5-flash-preview-native-audio-dialog (text)**: Audio-only model correctly rejects text input (expected behavior)
-  - Failure Reason: Exception: received 1008 (policy violation) models/gemini-2.5-flash-preview-native-audio-dialog is not found for API version v1alpha, or is not supported for bidiGener; then sent 1008 (policy violation) models/gemini-2.5-flash-preview-native-audio-dialog is not found for API version v1alpha, or is not supported for bidiGener
-- **gemini-2.5-flash-exp-native-audio-thinking-dialog (text)**: Audio-only model correctly rejects text input (expected behavior)
-  - Failure Reason: Exception: received 1008 (policy violation) models/gemini-2.5-flash-exp-native-audio-thinking-dialog is not found for API version v1alpha, or is not supported for bidi; then sent 1008 (policy violation) models/gemini-2.5-flash-exp-native-audio-thinking-dialog is not found for API version v1alpha, or is not supported for bidi
-- **gemini-2.5-flash-preview-native-audio-dialog (voice)**: Unexpected failure - requires investigation
-  - Failure Reason: Exception: received 1008 (policy violation) models/gemini-2.5-flash-preview-native-audio-dialog is not found for API version v1alpha, or is not supported for bidiGener; then sent 1008 (policy violation) models/gemini-2.5-flash-preview-native-audio-dialog is not found for API version v1alpha, or is not supported for bidiGener
-- **gemini-2.5-flash-exp-native-audio-thinking-dialog (voice)**: Unexpected failure - requires investigation
-  - Failure Reason: Exception: received 1008 (policy violation) models/gemini-2.5-flash-exp-native-audio-thinking-dialog is not found for API version v1alpha, or is not supported for bidi; then sent 1008 (policy violation) models/gemini-2.5-flash-exp-native-audio-thinking-dialog is not found for API version v1alpha, or is not supported for bidi
 - **gemini-2.0-flash-exp (text)**: Unexpected failure - requires investigation
   - Failure Reason: Exception: received 1007 (invalid frame payload data) gemini-2.0-flash-exp is not supported in the live api.; then sent 1007 (invalid frame payload data) gemini-2.0-flash-exp is not supported in the live api.
 - **gemini-2.0-flash-exp (voice)**: Unexpected failure - requires investigation

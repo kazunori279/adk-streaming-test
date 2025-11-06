@@ -50,8 +50,6 @@ class Config:
         "gemini-2.0-flash-live-001",
         "gemini-live-2.5-flash-preview",
         "gemini-2.5-flash-native-audio-preview-09-2025",
-        "gemini-2.5-flash-preview-native-audio-dialog",
-        "gemini-2.5-flash-exp-native-audio-thinking-dialog"
     ]
     
     # Vertex AI models: https://cloud.google.com/vertex-ai/generative-ai/docs/live-api
