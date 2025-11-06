@@ -75,7 +75,7 @@ pip install -r requirements.txt
 ```
 
 Key dependencies:
-- `google-adk==1.17.0`: Google Agent Development Kit
+- `google-adk`: Google Agent Development Kit (version in current_adk_version.txt)
 - `google-cloud-speech`: Google Cloud Speech-to-Text API
 - `pyaudio`: Audio I/O (requires PortAudio)
 - `pydub`: Audio manipulation (requires FFmpeg)
@@ -329,8 +329,8 @@ gh run view <run-id> --log
 
 The file `current_adk_version.txt` tracks the last tested ADK version:
 - Updated automatically after successful test runs
-- Used to detect new releases
-- Currently tracking: `1.17.0`
+- Used to detect new releases and as the version source for test reports
+- Current version is read from this file by test_tool.py for all reporting
 
 ### Benefits
 

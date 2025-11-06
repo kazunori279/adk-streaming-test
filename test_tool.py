@@ -30,6 +30,15 @@ warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 # Load environment variables
 load_dotenv()
 
+def get_adk_version():
+    """Get the current ADK version from current_adk_version.txt file."""
+    try:
+        with open('current_adk_version.txt', 'r') as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        # Fallback to installed package version if file doesn't exist
+        return google.adk.__version__
+
 # Configuration
 class Config:
     """Application configuration"""
@@ -624,7 +633,7 @@ def _generate_report_header(results: dict, retry_counts: dict = None) -> str:
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     google_project = os.getenv("GOOGLE_CLOUD_PROJECT", "Not configured")
     google_location = os.getenv("GOOGLE_CLOUD_LOCATION", "Not configured")
-    adk_version = google.adk.__version__
+    adk_version = get_adk_version()
 
     total_tests = len(results)
     passed_tests = sum(1 for success in results.values() if success)
@@ -863,9 +872,9 @@ def generate_test_report(results, test_type, output_file="test_report.md", trans
                 report_content += f"- **{formatted_name}**: Unexpected failure - requires investigation\n"
                 report_content += f"  - Failure Reason: {failure_reason}\n"
         report_content += "\n"
-    
+
     # Add environment and usage information
-    adk_version = google.adk.__version__
+    adk_version = get_adk_version()
     report_content += f"""## Environment Information
 - **ADK Version**: {adk_version}
 - **Python Dependencies**: google-adk, google-cloud-speech, pyaudio, pydub, python-dotenv

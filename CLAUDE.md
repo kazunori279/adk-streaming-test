@@ -18,7 +18,7 @@ This is a comprehensive Python testing framework for Google Agent Development Ki
 
 ### Technical Components
 - Python virtual environment in `.venv/`
-- Google ADK v1.17.0 for AI agent development
+- Google ADK (version tracked in current_adk_version.txt) for AI agent development
 - Audio processing capabilities (PyAudio for I/O, pydub for conversion)
 - Google Cloud Speech-to-Text integration for voice validation
 - MCP (Model Context Protocol) configuration with GitHub server access
@@ -37,7 +37,7 @@ source .venv/bin/activate  # On macOS/Linux
 
 ### Dependencies
 Dependencies are managed through `requirements.txt`. Key dependencies include:
-- **google-adk==1.17.0**: Google Agent Development Kit with streaming support
+- **google-adk**: Google Agent Development Kit with streaming support (version specified in current_adk_version.txt)
 - **google-cloud-speech**: Google Cloud Speech-to-Text API for voice transcription
 - **PyAudio**: Audio I/O library for real-time audio playback (requires PortAudio)
 - **pydub**: Audio format conversion and manipulation (requires FFmpeg)
