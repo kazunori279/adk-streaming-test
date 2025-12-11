@@ -20,11 +20,7 @@ See [the latest test report](test_report.md)
 
 #### Google AI Studio Models
 - `gemini-2.0-flash-exp`: Experimental flash model
-- `gemini-2.0-flash-live-001`: Production-ready live model
-- `gemini-live-2.5-flash-preview`: Latest live preview with enhanced streaming
 - `gemini-2.5-flash-native-audio-preview-09-2025`: Native audio model (audio-only, uses transcription for text tests)
-- `gemini-2.5-flash-preview-native-audio-dialog`: Dialog-optimized native audio model
-- `gemini-2.5-flash-exp-native-audio-thinking-dialog`: Experimental thinking-mode native audio model
 
 #### Vertex AI Models
 - `gemini-2.0-flash-exp`: Experimental model on Vertex AI
@@ -101,6 +97,18 @@ Key dependencies:
    Ensure `whattime.m4a` is present in the project root for voice testing
 
 ## Usage
+
+### Quick Start
+```bash
+# 1. Activate virtual environment
+source .venv/bin/activate
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Run tests
+python test_tool.py
+```
 
 ### Run All Tests (Recommended)
 ```bash

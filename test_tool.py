@@ -47,8 +47,6 @@ class Config:
     # Google AI Studio models: https://ai.google.dev/gemini-api/docs/models#live-api
     GOOGLE_AI_STUDIO_MODELS = [
         "gemini-2.0-flash-exp",
-        "gemini-2.0-flash-live-001",
-        "gemini-live-2.5-flash-preview",
         "gemini-2.5-flash-native-audio-preview-09-2025",
     ]
     

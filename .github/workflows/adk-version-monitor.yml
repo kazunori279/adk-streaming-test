@@ -96,6 +96,12 @@ jobs:
           GOOGLE_CLOUD_LOCATION=${{ secrets.GOOGLE_CLOUD_LOCATION }}
           EOF
 
+      - name: Update version tracking file
+        if: steps.should_run.outputs.run_tests == 'true'
+        run: |
+          # Update version file BEFORE running tests so the report shows the correct version
+          echo "${{ steps.check_version.outputs.latest_version }}" > current_adk_version.txt
+
       - name: Run ADK streaming tests
         if: steps.should_run.outputs.run_tests == 'true'
         id: run_tests
@@ -141,11 +147,6 @@ jobs:
             echo "No test report found"
             echo "report_file=" >> $GITHUB_OUTPUT
           fi
-
-      - name: Update version tracking file
-        if: steps.should_run.outputs.run_tests == 'true'
-        run: |
-          echo "${{ steps.check_version.outputs.latest_version }}" > current_adk_version.txt
 
       - name: Copy report to test_report.md
         if: steps.should_run.outputs.run_tests == 'true' && steps.report_details.outputs.report_file != ''

@@ -160,11 +160,7 @@ Centralized configuration management:
 #### Google AI Studio
 
 - `gemini-2.0-flash-exp`: Experimental flash model
-- `gemini-2.0-flash-live-001`: Production-ready live model
-- `gemini-live-2.5-flash-preview`: Latest live preview with enhanced streaming
 - `gemini-2.5-flash-native-audio-preview-09-2025`: Native audio model
-- `gemini-2.5-flash-preview-native-audio-dialog`: Dialog-optimized native audio model
-- `gemini-2.5-flash-exp-native-audio-thinking-dialog`: Experimental thinking-mode native audio model
 
 #### Vertex AI
 
