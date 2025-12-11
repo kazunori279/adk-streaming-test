@@ -180,6 +180,45 @@ jobs:
           git commit -F /tmp/commit_msg.txt
           git push
 
+      - name: Notify on test completion
+        if: steps.should_run.outputs.run_tests == 'true' && steps.report_details.outputs.report_file != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const version = '${{ steps.check_version.outputs.latest_version }}';
+            const successRate = '${{ steps.report_details.outputs.success_rate }}';
+            const passedTests = '${{ steps.report_details.outputs.passed_tests }}';
+            const totalTests = '${{ steps.report_details.outputs.total_tests }}';
+            const reportFile = '${{ steps.report_details.outputs.report_file }}';
+            const timestamp = '${{ steps.report_details.outputs.timestamp }}';
+            const testStatus = '${{ steps.run_tests.outputs.test_exit_code }}' === '0' ? '✅ All tests passed' : '⚠️ Some tests failed';
+
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `ADK v${version} Test Report - ${successRate} success rate`,
+              body: `## Test Report Generated
+
+            @kazunori279 - A new ADK test report has been generated.
+
+            ### Summary
+            - **ADK Version**: ${version}
+            - **Test Date**: ${timestamp}
+            - **Status**: ${testStatus}
+            - **Success Rate**: ${successRate}
+            - **Tests Passed**: ${passedTests}/${totalTests}
+
+            ### Report
+            📄 [View Full Report](../../blob/main/${reportFile})
+
+            ---
+            *This notification was automatically created by the ADK Version Monitor workflow.*
+            `,
+              labels: ['automated-test', 'test-report']
+            });
+
+            core.info(`Created notification issue #${issue.data.number}`);
+
       - name: Create issue on test failures
         if: steps.should_run.outputs.run_tests == 'true' && steps.run_tests.outputs.test_exit_code != '0'
         uses: actions/github-script@v7

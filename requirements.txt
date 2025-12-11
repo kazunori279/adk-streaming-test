@@ -3,3 +3,4 @@ python-dotenv
 google-cloud-speech
 pyaudio
 pydub
+audioop-lts

@@ -42,6 +42,7 @@ Dependencies are managed through `requirements.txt`. Key dependencies include:
 - **PyAudio**: Audio I/O library for real-time audio playback (requires PortAudio)
 - **pydub**: Audio format conversion and manipulation (requires FFmpeg)
 - **python-dotenv**: Environment variable management for platform configuration
+- **audioop-lts**: Audio operations compatibility for Python 3.13+
 
 **System Dependencies (macOS)**:
 ```bash

@@ -76,6 +76,7 @@ Key dependencies:
 - `pyaudio`: Audio I/O (requires PortAudio)
 - `pydub`: Audio manipulation (requires FFmpeg)
 - `python-dotenv`: Environment variable management
+- `audioop-lts`: Audio operations compatibility for Python 3.13+
 
 ### Environment Setup
 
