@@ -130,13 +130,13 @@ jobs:
           if [ -n "$REPORT_FILE" ]; then
             echo "report_file=$REPORT_FILE" >> $GITHUB_OUTPUT
 
-            # Extract success rate from report
-            SUCCESS_RATE=$(grep -oP 'Success Rate: \K[0-9.]+%' "$REPORT_FILE" | head -n 1 || echo "N/A")
+            # Extract success rate from report (format: **Success Rate**: 80.0%)
+            SUCCESS_RATE=$(grep -oP '\*\*Success Rate\*\*: \K[0-9.]+%' "$REPORT_FILE" | head -n 1 || echo "N/A")
             echo "success_rate=$SUCCESS_RATE" >> $GITHUB_OUTPUT
 
-            # Count passed/failed tests
-            PASSED_TESTS=$(grep -oP '\K[0-9]+(?=/[0-9]+ tests passed)' "$REPORT_FILE" | head -n 1 || echo "0")
-            TOTAL_TESTS=$(grep -oP '[0-9]+/\K[0-9]+(?= tests passed)' "$REPORT_FILE" | head -n 1 || echo "0")
+            # Count passed/failed tests (format: **Passed Tests**: 8, **Total Tests**: 10)
+            PASSED_TESTS=$(grep -oP '\*\*Passed Tests\*\*: \K[0-9]+' "$REPORT_FILE" | head -n 1 || echo "0")
+            TOTAL_TESTS=$(grep -oP '\*\*Total Tests\*\*: \K[0-9]+' "$REPORT_FILE" | head -n 1 || echo "0")
             echo "passed_tests=$PASSED_TESTS" >> $GITHUB_OUTPUT
             echo "total_tests=$TOTAL_TESTS" >> $GITHUB_OUTPUT
 
