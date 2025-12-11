@@ -178,6 +178,9 @@ jobs:
           EOF
 
           git commit -F /tmp/commit_msg.txt
+
+          # Pull any remote changes and rebase before pushing
+          git pull --rebase origin main
           git push
 
       - name: Notify on test completion
