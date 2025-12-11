@@ -209,7 +209,7 @@ jobs:
             - **Tests Passed**: ${passedTests}/${totalTests}
 
             ### Report
-            📄 [View Full Report](../../blob/main/${reportFile})
+            📄 [View Full Report](../../blob/main/test_report.md)
 
             ---
             *This notification was automatically created by the ADK Version Monitor workflow.*
