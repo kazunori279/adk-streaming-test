@@ -212,7 +212,7 @@ jobs:
             - **Tests Passed**: ${passedTests}/${totalTests}
 
             ### Report
-            📄 [View Full Report](../../blob/main/test_report.md)
+            📄 [View Full Report](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/main/test_report.md)
 
             ---
             *This notification was automatically created by the ADK Version Monitor workflow.*
