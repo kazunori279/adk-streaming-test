@@ -21,11 +21,13 @@ See [the latest test report](test_report.md)
 #### Google AI Studio Models
 - `gemini-2.0-flash-exp`: Experimental flash model
 - `gemini-2.5-flash-native-audio-preview-09-2025`: Native audio model (audio-only, uses transcription for text tests)
+- `gemini-live-2.5-flash-native-audio`: Native audio model
 
 #### Vertex AI Models
 - `gemini-2.0-flash-exp`: Experimental model on Vertex AI
 - `gemini-live-2.5-flash-preview-native-audio`: Native audio processing model (audio-only, uses transcription for text tests)
 - `gemini-live-2.5-flash-preview-native-audio-09-17`: Native audio model (September 2025 version)
+- `gemini-live-2.5-flash-native-audio`: Native audio model
 
 ### Audio Processing Pipeline
 - **Input Processing**: Converts M4A audio files to 16kHz, mono, 16-bit PCM format
