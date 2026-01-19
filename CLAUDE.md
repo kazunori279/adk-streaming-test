@@ -50,6 +50,12 @@ Dependencies are managed through `requirements.txt`. Key dependencies include:
 brew install portaudio ffmpeg
 ```
 
+**System Dependencies (Linux - Debian/Ubuntu)**:
+```bash
+# Install via apt
+sudo apt-get install portaudio19-dev ffmpeg
+```
+
 **Python Dependencies**:
 ```bash
 pip install -r requirements.txt

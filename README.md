@@ -51,9 +51,9 @@ This allows comprehensive testing of native-audio models across both text and vo
 
 ## Requirements
 
-### Platform Dependencies (macOS)
+### Platform Dependencies
 
-This tool is optimized for macOS and requires:
+#### macOS
 
 - **Homebrew**: Package manager for installing system dependencies
 - **PortAudio**: Audio I/O library for PyAudio
@@ -63,6 +63,17 @@ This tool is optimized for macOS and requires:
 - **FFmpeg**: Audio/video processing for format conversion
   ```bash
   brew install ffmpeg
+  ```
+
+#### Linux (Debian/Ubuntu)
+
+- **PortAudio**: Audio I/O library for PyAudio (development headers required)
+  ```bash
+  sudo apt-get install portaudio19-dev
+  ```
+- **FFmpeg**: Audio/video processing for format conversion
+  ```bash
+  sudo apt-get install ffmpeg
   ```
 
 ### Python Dependencies
