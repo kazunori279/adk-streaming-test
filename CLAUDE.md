@@ -166,14 +166,12 @@ Centralized configuration management:
 
 #### Google AI Studio
 
-- `gemini-2.0-flash-exp`: Experimental flash model
 - `gemini-2.5-flash-native-audio-preview-09-2025`: Native audio model
+- `gemini-2.5-flash-native-audio-preview-12-2025`: Native audio model (December 2025 version)
 
 #### Vertex AI
 
-- `gemini-2.0-flash-exp`: Experimental model on Vertex AI
-- `gemini-live-2.5-flash-preview-native-audio`: Native audio processing model
-- `gemini-live-2.5-flash-preview-native-audio-09-17`: Native audio model (September 2025 version)
+- `gemini-live-2.5-flash-native-audio`: Native audio model
 
 ### Audio Processing Flow
 

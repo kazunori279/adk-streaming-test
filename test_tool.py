@@ -46,16 +46,12 @@ class Config:
 
     # Google AI Studio models: https://ai.google.dev/gemini-api/docs/models#live-api
     GOOGLE_AI_STUDIO_MODELS = [
-        "gemini-2.0-flash-exp",
         "gemini-2.5-flash-native-audio-preview-09-2025",
         "gemini-2.5-flash-native-audio-preview-12-2025",
     ]
     
     # Vertex AI models: https://cloud.google.com/vertex-ai/generative-ai/docs/live-api
     VERTEX_AI_MODELS = [
-        "gemini-2.0-flash-exp",
-        "gemini-live-2.5-flash-preview-native-audio",
-        "gemini-live-2.5-flash-preview-native-audio-09-17",
         "gemini-live-2.5-flash-native-audio",
     ]
     
