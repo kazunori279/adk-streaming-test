@@ -21,9 +21,11 @@ See [the latest test report](test_report.md)
 #### Google AI Studio Models
 - `gemini-2.5-flash-native-audio-preview-09-2025`: Native audio model (audio-only, uses transcription for text tests)
 - `gemini-2.5-flash-native-audio-preview-12-2025`: Native audio model (December 2025 version)
+- `gemini-3.1-flash-live-preview`: Gemini 3.1 Flash live preview model
 
 #### Vertex AI Models
 - `gemini-live-2.5-flash-native-audio`: Native audio model
+- `gemini-3.1-flash-live-preview`: Gemini 3.1 Flash live preview model
 
 ### Audio Processing Pipeline
 - **Input Processing**: Converts M4A audio files to 16kHz, mono, 16-bit PCM format
@@ -74,9 +76,15 @@ This allows comprehensive testing of native-audio models across both text and vo
 
 ### Python Dependencies
 
-Install from `requirements.txt`:
+This project uses [uv](https://docs.astral.sh/uv/) for Python and dependency management.
+
 ```bash
-pip install -r requirements.txt
+# Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Create virtual environment and install dependencies
+uv venv
+uv pip install -r requirements.txt
 ```
 
 Key dependencies:
@@ -110,45 +118,46 @@ Key dependencies:
 
 ### Quick Start
 ```bash
-# 1. Activate virtual environment
-source .venv/bin/activate
+# 1. Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# 2. Install dependencies
-pip install -r requirements.txt
+# 2. Create virtual environment and install dependencies
+uv venv
+uv pip install -r requirements.txt
 
 # 3. Run tests
-python test_tool.py
+uv run python test_tool.py
 ```
 
 ### Run All Tests (Recommended)
 ```bash
 # Run comprehensive test suite across all platforms and models
-python test_tool.py
+uv run python test_tool.py
 ```
 
 ### Platform-Specific Testing
 ```bash
 # Test Google AI Studio only
-python test_tool.py --platform google-ai-studio
+uv run python test_tool.py --platform google-ai-studio
 
 # Test Vertex AI only
-python test_tool.py --platform vertex-ai
+uv run python test_tool.py --platform vertex-ai
 ```
 
 ### Single Model Testing
 ```bash
 # Test specific model on specific platform
-python test_tool.py --platform google-ai-studio --model gemini-2.0-flash-live-001
-python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp
+uv run python test_tool.py --platform google-ai-studio --model gemini-2.0-flash-live-001
+uv run python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp
 ```
 
 ### Region-Specific Testing
 ```bash
 # Test with specific region (overrides GOOGLE_CLOUD_LOCATION env var)
-python test_tool.py --platform vertex-ai --region europe-west1
+uv run python test_tool.py --platform vertex-ai --region europe-west1
 
 # Test specific model in specific region
-python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp --region us-west1
+uv run python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp --region us-west1
 
 # Region priority: --region parameter > GOOGLE_CLOUD_LOCATION env var > us-central1 default
 ```
@@ -156,7 +165,7 @@ python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp --region u
 ### Headless Mode (CI/GitHub Actions)
 ```bash
 # Run tests without audio playback (for CI environments)
-python test_tool.py --headless
+uv run python test_tool.py --headless
 
 # Headless mode:
 # - Skips audio playback to speakers

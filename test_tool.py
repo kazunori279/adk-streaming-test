@@ -28,7 +28,7 @@ import google.adk
 warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 
 # Load environment variables
-load_dotenv()
+load_dotenv(override=True)
 
 def get_adk_version():
     """Get the current ADK version from current_adk_version.txt file."""
@@ -48,11 +48,13 @@ class Config:
     GOOGLE_AI_STUDIO_MODELS = [
         "gemini-2.5-flash-native-audio-preview-09-2025",
         "gemini-2.5-flash-native-audio-preview-12-2025",
+        "gemini-3.1-flash-live-preview",
     ]
-    
+
     # Vertex AI models: https://cloud.google.com/vertex-ai/generative-ai/docs/live-api
     VERTEX_AI_MODELS = [
         "gemini-live-2.5-flash-native-audio",
+        "gemini-3.1-flash-live-preview",
     ]
     
     # Audio configuration
