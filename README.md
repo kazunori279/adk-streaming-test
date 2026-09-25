@@ -1,6 +1,6 @@
 # ADK Bidirectional Streaming Test Tool
 
-A comprehensive testing framework for Google Agent Development Kit (ADK) bidirectional streaming functionality. This tool tests both text and voice interactions across Google AI Studio and Vertex AI platforms with multiple Gemini models.
+A comprehensive testing framework for Google Agent Development Kit (ADK) bidirectional streaming functionality. This tool tests both text and voice interactions across Google AI Studio and Gemini Enterprise platforms with multiple Gemini models.
 
 ## Latest Test Report:
 
@@ -10,7 +10,7 @@ See [the latest test report](test_report.md)
 
 ### Core Functionality
 - **Bidirectional Streaming**: Tests real-time streaming communication with ADK agents
-- **Multi-Platform Support**: Tests both Google AI Studio and Google Cloud Vertex AI
+- **Multi-Platform Support**: Tests both Google AI Studio and Gemini Enterprise (formerly Vertex AI). Select Gemini Enterprise with `--platform ge`. The SDK environment variable keeps its old name: `GOOGLE_GENAI_USE_VERTEXAI`.
 - **Dual Test Modes**: Comprehensive text chat and voice chat testing
 - **Automated Test Reports**: Generates detailed test reports with success metrics and error analysis
 - **Voice Processing**: Real-time audio conversion, playback, and transcription capabilities
@@ -21,11 +21,13 @@ See [the latest test report](test_report.md)
 #### Google AI Studio Models
 - `gemini-2.5-flash-native-audio-preview-09-2025`: Native audio model (audio-only, uses transcription for text tests)
 - `gemini-2.5-flash-native-audio-preview-12-2025`: Native audio model (December 2025 version)
-- `gemini-3.1-flash-live-preview`: Gemini 3.1 Flash live preview model
+- `gemini-3.1-flash-live-preview`: Gemini 3.1 Flash live preview model (legacy preview)
+- `gemini-3.8-live`: Gemini 3.8 Live (stable)
+- `gemini-3.8-live-extended-thinking`: Gemini 3.8 Live with background reasoning (stable)
 
-#### Vertex AI Models
+#### Gemini Enterprise Models
 - `gemini-live-2.5-flash-native-audio`: Native audio model
-- `gemini-3.1-flash-live-preview`: Gemini 3.1 Flash live preview model
+- `gemini-3.8-live`: Gemini 3.8 Live (GA)
 
 ### Audio Processing Pipeline
 - **Input Processing**: Converts M4A audio files to 16kHz, mono, 16-bit PCM format
@@ -34,8 +36,8 @@ See [the latest test report](test_report.md)
 - **Audio Playback**: Plays responses through system speakers using PyAudio
 - **Speech Transcription**: Uses Google Cloud Speech-to-Text for response validation
 
-### Native-Audio Model Support
-Models with "native-audio" in their names (e.g., `gemini-2.5-flash-native-audio-preview-09-2025`) are audio-only models that require special handling:
+### Audio-Only Model Support
+Models with "native-audio" or "-live" in their names (e.g., `gemini-2.5-flash-native-audio-preview-09-2025`, `gemini-3.8-live`) are audio-only models that require special handling:
 
 - **Text Chat Tests**: Instead of using TEXT modality, these models:
   - Use AUDIO response modality with `output_audio_transcription` enabled
@@ -45,7 +47,7 @@ Models with "native-audio" in their names (e.g., `gemini-2.5-flash-native-audio-
 
 - **Voice Chat Tests**: Work the same as standard models with direct audio input/output
 
-This allows comprehensive testing of native-audio models across both text and voice interaction modes.
+This allows comprehensive testing of audio-only models across both text and voice interaction modes.
 
 ## Requirements
 
@@ -76,15 +78,21 @@ This allows comprehensive testing of native-audio models across both text and vo
 
 ### Python Dependencies
 
-This project uses [uv](https://docs.astral.sh/uv/) for Python and dependency management.
+This project uses [uv](https://docs.astral.sh/uv/) for Python and dependency management. Dependencies are declared in `pyproject.toml` and pinned in `uv.lock`.
 
 ```bash
 # Install uv (if not already installed)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Create virtual environment and install dependencies
-uv venv
-uv pip install -r requirements.txt
+# Create .venv and install the locked dependencies
+uv sync
+```
+
+To test a different ADK version locally, re-pin it in the lock file:
+
+```bash
+uv lock --upgrade-package "google-adk==2.10.0"
+uv sync
 ```
 
 Key dependencies:
@@ -103,7 +111,7 @@ Key dependencies:
    # For Google AI Studio
    GOOGLE_API_KEY=your_api_key_here
    
-   # For Vertex AI
+   # For Gemini Enterprise
    GOOGLE_CLOUD_PROJECT=your_project_id
    GOOGLE_CLOUD_LOCATION=us-central1  # Optional: defaults to us-central1 if not set
    ```
@@ -121,9 +129,8 @@ Key dependencies:
 # 1. Install uv (if not already installed)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# 2. Create virtual environment and install dependencies
-uv venv
-uv pip install -r requirements.txt
+# 2. Install dependencies
+uv sync
 
 # 3. Run tests
 uv run python test_tool.py
@@ -140,24 +147,24 @@ uv run python test_tool.py
 # Test Google AI Studio only
 uv run python test_tool.py --platform google-ai-studio
 
-# Test Vertex AI only
-uv run python test_tool.py --platform vertex-ai
+# Test Gemini Enterprise only
+uv run python test_tool.py --platform ge
 ```
 
 ### Single Model Testing
 ```bash
 # Test specific model on specific platform
-uv run python test_tool.py --platform google-ai-studio --model gemini-2.0-flash-live-001
-uv run python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp
+uv run python test_tool.py --platform google-ai-studio --model gemini-3.8-live
+uv run python test_tool.py --platform ge --model gemini-live-2.5-flash-native-audio
 ```
 
 ### Region-Specific Testing
 ```bash
 # Test with specific region (overrides GOOGLE_CLOUD_LOCATION env var)
-uv run python test_tool.py --platform vertex-ai --region europe-west1
+uv run python test_tool.py --platform ge --region europe-west1
 
 # Test specific model in specific region
-uv run python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp --region us-west1
+uv run python test_tool.py --platform ge --model gemini-live-2.5-flash-native-audio --region us-west1
 
 # Region priority: --region parameter > GOOGLE_CLOUD_LOCATION env var > us-central1 default
 ```
@@ -182,7 +189,7 @@ This repository includes an automated workflow that monitors PyPI for new Google
 
 - **Automatic Version Detection**: Checks PyPI every 12 hours for new `google-adk` releases
 - **Smart Testing**: Runs tests only when a new version is detected
-- **Comprehensive Coverage**: Tests all platforms (Google AI Studio + Vertex AI) and models
+- **Comprehensive Coverage**: Tests all platforms (Google AI Studio + Gemini Enterprise) and models
 - **Automated Reporting**: Commits test reports with detailed results and analytics
 - **Failure Notifications**: Creates GitHub issues when tests fail
 - **Manual Triggers**: Supports manual workflow runs with force option
@@ -200,10 +207,10 @@ Configure these secrets in your repository settings (Settings > Secrets and vari
 | Secret Name | Description | Required For |
 |-------------|-------------|--------------|
 | `GOOGLE_API_KEY` | Google AI Studio API key | Google AI Studio tests |
-| `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID | Vertex AI tests |
-| `WORKLOAD_IDENTITY_PROVIDER` | Workload Identity Provider resource name | Vertex AI authentication |
-| `SERVICE_ACCOUNT_EMAIL` | Service account email address | Vertex AI authentication |
-| `GOOGLE_CLOUD_LOCATION` | Default region (e.g., `us-central1`) | Vertex AI tests (optional) |
+| `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID | Gemini Enterprise tests |
+| `WORKLOAD_IDENTITY_PROVIDER` | Workload Identity Provider resource name | Gemini Enterprise authentication |
+| `SERVICE_ACCOUNT_EMAIL` | Service account email address | Gemini Enterprise authentication |
+| `GOOGLE_CLOUD_LOCATION` | Default region (e.g., `us-central1`) | Gemini Enterprise tests (optional) |
 
 ### Setting Up Secrets
 
@@ -234,7 +241,7 @@ gcloud iam service-accounts create adk-tester \
   --project="${PROJECT_ID}" \
   --display-name="ADK Test Runner"
 
-# Grant required permissions for Vertex AI
+# Grant required permissions for Gemini Enterprise
 gcloud projects add-iam-policy-binding ${PROJECT_ID} \
   --member="serviceAccount:adk-tester@${PROJECT_ID}.iam.gserviceaccount.com" \
   --role="roles/aiplatform.user"
@@ -316,9 +323,9 @@ gh secret set GOOGLE_CLOUD_LOCATION
 #### When New Version Detected
 
 1. **Version Check**: Compares PyPI version with `current_adk_version.txt`
-2. **Test Execution**: Runs `python test_tool.py --headless` with new version
+2. **Test Execution**: Pins the new version in `uv.lock` with `uv lock --upgrade-package`, then runs `uv run python test_tool.py --headless`
 3. **Report Generation**: Creates timestamped test report (e.g., `test_report_us-central1_20251030_123456.md`)
-4. **Auto-Commit**: Commits report and updates version file with message:
+4. **Auto-Commit**: Commits the report, version file, and `uv.lock` with message:
    ```
    Test results for google-adk v1.18.0
 
@@ -365,7 +372,7 @@ The file `current_adk_version.txt` tracks the last tested ADK version:
 - **Early Detection**: Catch breaking changes immediately after release
 - **Historical Tracking**: All test reports committed to repository
 - **Version Audit Trail**: Clear record of tested versions
-- **Multi-Platform Coverage**: Tests both Google AI Studio and Vertex AI
+- **Multi-Platform Coverage**: Tests both Google AI Studio and Gemini Enterprise
 - **Comprehensive Reports**: Full analytics, transcriptions, and error traces
 
 ## Test Methodology
@@ -383,7 +390,7 @@ All tests use the standardized question: **"What time is it now?"**
 1. Establishes ADK agent session with Google Search tool
 2. Detects model type and configures appropriate response modality:
    - **Standard models**: Uses TEXT modality for text responses
-   - **Native-audio models**: Uses AUDIO modality with `AudioTranscriptionConfig` for audio responses with automatic transcription
+   - **Audio-only models**: Uses AUDIO modality with `AudioTranscriptionConfig` for audio responses with automatic transcription
 3. Sends text query via streaming API
 4. Receives and validates streaming response (text or audio transcript)
 5. Verifies response contains time information
@@ -401,7 +408,7 @@ All tests use the standardized question: **"What time is it now?"**
 The tool automatically generates comprehensive test reports including:
 
 - **Test Summary**: Overall success rates and statistics
-- **Platform Breakdown**: Results by Google AI Studio vs Vertex AI
+- **Platform Breakdown**: Results by Google AI Studio vs Gemini Enterprise
 - **Model-Specific Results**: Individual pass/fail status for each model
 - **Voice Transcriptions**: Full transcripts of voice responses
 - **Error Analysis**: Detailed error traces for failed tests
@@ -421,7 +428,7 @@ The tool automatically generates comprehensive test reports including:
 
 1. **ADKStreamingTester**: Main test orchestrator
    - Manages platform configuration
-   - Detects and handles native-audio models with automatic transcription
+   - Detects and handles audio-only models with automatic transcription
    - Handles agent session creation
    - Executes test workflows
    - Collects results and metrics
@@ -486,4 +493,4 @@ The test tool provides detailed error traces in reports, including:
 - [Google ADK Documentation](https://github.com/google/adk-docs)
 - [Google Cloud Speech-to-Text](https://cloud.google.com/speech-to-text/docs/speech-to-text-client-libraries)
 - [Gemini Live API Models](https://ai.google.dev/gemini-api/docs/models#live-api)
-- [Vertex AI Live API](https://cloud.google.com/vertex-ai/generative-ai/docs/live-api)
+- [Gemini Enterprise Live API](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/live-api)

@@ -1,0 +1,15 @@
+[project]
+name = "adk-streaming-test"
+version = "0.1.0"
+description = "Test tool for Google ADK bidirectional streaming across Google AI Studio and Gemini Enterprise"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "google-adk",
+    "google-cloud-speech",
+    "python-dotenv",
+    "certifi",
+    "pyaudio",
+    "pydub",
+    "audioop-lts; python_version >= '3.13'",
+]

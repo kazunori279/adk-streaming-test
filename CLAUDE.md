@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is a comprehensive Python testing framework for Google Agent Development Kit (ADK) bidirectional streaming functionality. The project provides automated testing across multiple platforms and models with both text and voice interaction capabilities.
 
 ### Key Features
-- **Multi-Platform Testing**: Google AI Studio and Google Cloud Vertex AI
+- **Multi-Platform Testing**: Google AI Studio and Gemini Enterprise
 - **Dual Test Modes**: Text chat and voice chat testing
 - **Model Coverage**: Tests multiple Gemini models including live, experimental, and native-audio variants
 - **Voice Processing Pipeline**: Complete audio conversion, streaming, playback, and transcription
@@ -28,15 +28,10 @@ This is a comprehensive Python testing framework for Google Agent Development Ki
 ## Development Environment
 
 ### Virtual Environment
-The project uses a Python virtual environment located in `.venv/`. Activate it with:
-```bash
-source .venv/bin/activate  # On macOS/Linux
-# or
-.venv\Scripts\activate     # On Windows
-```
+The project uses uv. `uv sync` creates `.venv/` and installs the locked dependencies; `uv run` executes commands inside it, so there is no need to activate the venv.
 
 ### Dependencies
-Dependencies are managed through `requirements.txt`. Key dependencies include:
+Dependencies are declared in `pyproject.toml` and pinned in `uv.lock`. The `google-adk` version in `uv.lock` should match `current_adk_version.txt`; CI updates both when it tests a new release. Key dependencies include:
 - **google-adk**: Google Agent Development Kit with streaming support (version specified in current_adk_version.txt)
 - **google-cloud-speech**: Google Cloud Speech-to-Text API for voice transcription
 - **PyAudio**: Audio I/O library for real-time audio playback (requires PortAudio)
@@ -58,7 +53,7 @@ sudo apt-get install portaudio19-dev ffmpeg
 
 **Python Dependencies**:
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
 
 ## Common Commands
@@ -66,23 +61,23 @@ pip install -r requirements.txt
 Development and testing commands for this ADK streaming test project:
 
 ### Environment Setup
-- **Activate virtual environment**: `source .venv/bin/activate`
-- **Install dependencies**: `pip install -r requirements.txt`
-- **Update ADK**: `pip install --upgrade google-adk`
-- **Generate requirements**: `pip freeze > requirements.txt`
+- **Install dependencies**: `uv sync`
+- **Pin a specific ADK version**: `uv lock --upgrade-package "google-adk==<version>" && uv sync`
+- **Add a dependency**: `uv add <package>`
 
 ### Testing Commands
-- **Run all tests (recommended)**: `python test_tool.py`
-- **Test specific platform**: `python test_tool.py --platform google-ai-studio`
-- **Test specific model**: `python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp`
-- **Test with specific region**: `python test_tool.py --platform vertex-ai --region europe-west1`
-- **Test specific model in region**: `python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp --region us-west1`
-- **Run in headless mode (CI/GitHub Actions)**: `python test_tool.py --headless`
+- **Run all tests (recommended)**: `uv run python test_tool.py`
+- **Test specific platform**: `uv run python test_tool.py --platform google-ai-studio`
+- **Test specific model**: `uv run python test_tool.py --platform ge --model gemini-3.8-live`
+- **Test with specific region**: `uv run python test_tool.py --platform ge --region europe-west1`
+- **Test specific model in region**: `uv run python test_tool.py --platform ge --model gemini-live-2.5-flash-native-audio --region us-west1`
+- **Run in headless mode (CI/GitHub Actions)**: `uv run python test_tool.py --headless`
 - **View test results**: Open generated timestamped report files
 
 ### Platform Configuration
 - **Google AI Studio**: Requires `GOOGLE_API_KEY` in `.env`, sets `GOOGLE_GENAI_USE_VERTEXAI=FALSE`
-- **Vertex AI**: Requires `GOOGLE_CLOUD_PROJECT` in `.env`, sets `GOOGLE_GENAI_USE_VERTEXAI=TRUE`
+- **Gemini Enterprise** (formerly Vertex AI): Requires `GOOGLE_CLOUD_PROJECT` in `.env`, sets `GOOGLE_GENAI_USE_VERTEXAI=TRUE`
+  - Use "Gemini Enterprise" in prose and report output, and `ge` in identifiers (`--platform ge`, `Config.GE_MODELS`, `ge-` test name prefix). Only SDK names such as `GOOGLE_GENAI_USE_VERTEXAI` keep "vertex"
   - **Region Priority**: CLI `--region` parameter > `GOOGLE_CLOUD_LOCATION` env var > `us-central1` default
 
 ## MCP Configuration
@@ -102,8 +97,9 @@ adk-streaming-test/
 ├── .mcp.json             # MCP configuration for GitHub access
 ├── CLAUDE.md             # Project documentation for Claude Code
 ├── README.md             # Comprehensive project documentation
-├── requirements.txt      # Python dependencies
-├── test_tool.py          # Main ADK streaming test tool (755 lines)
+├── pyproject.toml        # Python dependencies
+├── uv.lock               # Locked dependency versions
+├── test_tool.py          # Main ADK streaming test tool
 ├── test_report_*.md      # Generated test reports with region and timestamp
 ├── whattime.m4a          # Audio test file ("What time is it now?")
 └── LICENSE               # Project license
@@ -126,7 +122,7 @@ This project provides a comprehensive testing framework for Google ADK streaming
 
 Main test orchestrator that handles:
 
-- Platform environment configuration (Google AI Studio vs Vertex AI)
+- Platform environment configuration (Google AI Studio vs Gemini Enterprise)
 - ADK agent session creation with Google Search tool integration
 - Text chat testing with streaming response collection
 - Voice chat testing with audio processing pipeline
@@ -168,10 +164,16 @@ Centralized configuration management:
 
 - `gemini-2.5-flash-native-audio-preview-09-2025`: Native audio model
 - `gemini-2.5-flash-native-audio-preview-12-2025`: Native audio model (December 2025 version)
+- `gemini-3.1-flash-live-preview`: Gemini 3.1 Flash Live (legacy preview)
+- `gemini-3.8-live`: Gemini 3.8 Live (stable)
+- `gemini-3.8-live-extended-thinking`: Gemini 3.8 Live with background reasoning (stable)
 
-#### Vertex AI
+#### Gemini Enterprise
 
 - `gemini-live-2.5-flash-native-audio`: Native audio model
+- `gemini-3.8-live`: Gemini 3.8 Live (GA)
+
+All of these models are audio-only. Text tests use AUDIO modality with output transcription (see `is_audio_only_model()`).
 
 ### Audio Processing Flow
 
@@ -196,9 +198,9 @@ Automated generation of detailed test reports including:
 
 ### Test Execution Flow
 
-1. **Comprehensive Testing** (`python test_tool.py`):
+1. **Comprehensive Testing** (`uv run python test_tool.py`):
    - Tests all Google AI Studio models with both text and voice
-   - Tests all Vertex AI models with both text and voice
+   - Tests all Gemini Enterprise models with both text and voice
    - Generates combined analytics and success metrics
    - Produces detailed test report with transcriptions and error analysis
 
@@ -229,7 +231,7 @@ Automated generation of detailed test reports including:
 
 ### Adding New Models
 
-1. Update model lists in `Config.GOOGLE_AI_STUDIO_MODELS` or `Config.VERTEX_AI_MODELS`
+1. Update model lists in `Config.GOOGLE_AI_STUDIO_MODELS` or `Config.GE_MODELS`
 2. Ensure model supports required modalities (text/audio)
 3. Test with both platforms to verify compatibility
 4. Update documentation with model capabilities and limitations

@@ -3,7 +3,7 @@
 ADK Bidirectional Streaming Test Tool
 
 Tests bidirectional streaming functionality with Google ADK using both
-Google AI Studio and Google Cloud Vertex AI platforms. Runs combined 
+Google AI Studio and Gemini Enterprise platforms. Runs combined 
 text and voice tests for comprehensive evaluation.
 """
 
@@ -12,6 +12,7 @@ import asyncio
 import argparse
 import warnings
 from datetime import datetime
+import certifi
 from dotenv import load_dotenv
 from google.genai.types import Content, Part, Blob
 from google.genai import types
@@ -49,14 +50,24 @@ class Config:
         "gemini-2.5-flash-native-audio-preview-09-2025",
         "gemini-2.5-flash-native-audio-preview-12-2025",
         "gemini-3.1-flash-live-preview",
+        "gemini-3.8-live",
+        "gemini-3.8-live-extended-thinking",
     ]
 
-    # Vertex AI models: https://cloud.google.com/vertex-ai/generative-ai/docs/live-api
-    VERTEX_AI_MODELS = [
+    # Gemini Enterprise models: https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/live-api
+    GE_MODELS = [
         "gemini-live-2.5-flash-native-audio",
-        "gemini-3.1-flash-live-preview",
+        "gemini-3.8-live",
     ]
-    
+
+    # Model name markers for audio-only models (no TEXT response modality)
+    AUDIO_ONLY_MODEL_MARKERS = ("native-audio", "-live")
+
+    # Models that reject sessions without an explicit thinking level
+    REQUIRED_THINKING_LEVELS = {
+        "gemini-3.8-live-extended-thinking": "low",
+    }
+
     # Audio configuration
     AUDIO_FORMAT = pyaudio.paInt16
     CHANNELS = 1
@@ -64,11 +75,16 @@ class Config:
     OUTPUT_RATE = 24000  # Output audio rate from Live API
     CHUNK_SIZE = 1024    # Audio chunk size for streaming
     TIMEOUT = 60         # Test timeout in seconds
+    TRAILING_SILENCE_SECONDS = 2  # Silence sent after the question audio
     
     # Test configuration
     TEST_QUESTION = "What time is it now?"
     AUDIO_FILE = "whattime.m4a"
     TIME_KEYWORDS = ["time", "clock", "hour", "minute", "am", "pm", "a.m", "p.m", "utc", "gmt", "o'clock"]
+
+def is_audio_only_model(model: str) -> bool:
+    """Check if the model only supports the AUDIO response modality."""
+    return any(marker in model.lower() for marker in Config.AUDIO_ONLY_MODEL_MARKERS)
 
 class VoiceHandler:
     """Handles voice input/output for testing."""
@@ -147,20 +163,16 @@ class ADKStreamingTester:
         self.error_trace = ""  # Store error details for reporting
         self.failure_reason = ""  # Store failure reason for reporting
 
-    def _is_native_audio_model(self) -> bool:
-        """Check if the model is a native-audio model."""
-        return "native-audio" in self.model.lower()
-
     async def setup_environment(self):
         """Configure environment variables for the platform."""
         if self.platform == "google-ai-studio":
             os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "FALSE"
             if not os.getenv("GOOGLE_API_KEY"):
                 raise ValueError("GOOGLE_API_KEY not found in environment")
-        else:  # vertex-ai
+        else:  # ge
             os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "TRUE"
             if not os.getenv("GOOGLE_CLOUD_PROJECT"):
-                raise ValueError("GOOGLE_CLOUD_PROJECT required for Vertex AI")
+                raise ValueError("GOOGLE_CLOUD_PROJECT required for Gemini Enterprise")
 
             # Use provided region or fall back to environment variable or default
             if self.region:
@@ -174,6 +186,13 @@ class ADKStreamingTester:
 
     async def create_agent_session(self):
         """Create ADK agent and session."""
+        generate_content_config = None
+        thinking_level = Config.REQUIRED_THINKING_LEVELS.get(self.model)
+        if thinking_level:
+            generate_content_config = types.GenerateContentConfig(
+                thinking_config=types.ThinkingConfig(thinking_level=thinking_level)
+            )
+
         agent = Agent(
             name="time_query_agent",
             model=self.model,
@@ -181,6 +200,7 @@ class ADKStreamingTester:
             instruction=f"Answer the question '{Config.TEST_QUESTION}' using the Google Search tool. "
                        "Provide the current time information.",
             tools=[google_search],
+            generate_content_config=generate_content_config,
         )
 
         self.runner = InMemoryRunner(app_name="agents", agent=agent)
@@ -200,9 +220,9 @@ class ADKStreamingTester:
             # Setup live streaming based on model type
             live_request_queue = LiveRequestQueue()
 
-            # Native-audio models require AUDIO modality with transcription
-            if self._is_native_audio_model():
-                print("Native-audio model detected - using AUDIO modality with transcription")
+            # Audio-only models require AUDIO modality with transcription
+            if is_audio_only_model(self.model):
+                print("Audio-only model detected - using AUDIO modality with transcription")
                 run_config = RunConfig(
                     response_modalities=["AUDIO"],
                     output_audio_transcription=types.AudioTranscriptionConfig()
@@ -225,7 +245,7 @@ class ADKStreamingTester:
             print("Response: ", end="", flush=True)
 
             # Collect response based on model type
-            if self._is_native_audio_model():
+            if is_audio_only_model(self.model):
                 full_response = await self._collect_audio_transcription_response(live_events)
             else:
                 full_response = await self._collect_text_response(live_events)
@@ -339,6 +359,10 @@ class ADKStreamingTester:
             print(f"Loading audio file: {Config.AUDIO_FILE}")
             question_pcm = voice_handler.load_audio_as_pcm(Config.AUDIO_FILE)
             await self._send_audio_chunks(question_pcm, live_request_queue, "question")
+
+            # Send trailing silence so voice activity detection sees the end of speech
+            silence_pcm = b"\x00" * (Config.INPUT_RATE * 2 * Config.TRAILING_SILENCE_SECONDS)
+            await self._send_audio_chunks(silence_pcm, live_request_queue, "silence")
             
             # Collect audio response
             audio_response, text_response = await self._collect_audio_response(live_events)
@@ -453,28 +477,28 @@ async def run_all_tests(region: str = None, headless: bool = False) -> tuple[dic
     failure_reasons.update(studio_text_failures)
     failure_reasons.update(studio_voice_failures)
 
-    # Test Vertex AI
-    print("\nTesting Google Cloud Vertex AI Platform")
+    # Test Gemini Enterprise
+    print("\nTesting Gemini Enterprise")
     print("-" * 40)
 
-    # Run both text and voice tests for Vertex AI
-    vertex_text_results, vertex_text_transcriptions, vertex_text_errors, vertex_text_retries, vertex_text_failures = await _test_platform(
-        "vertex-ai", Config.VERTEX_AI_MODELS, "text", region, headless
+    # Run both text and voice tests for Gemini Enterprise
+    ge_text_results, ge_text_transcriptions, ge_text_errors, ge_text_retries, ge_text_failures = await _test_platform(
+        "ge", Config.GE_MODELS, "text", region, headless
     )
-    vertex_voice_results, vertex_voice_transcriptions, vertex_voice_errors, vertex_voice_retries, vertex_voice_failures = await _test_platform(
-        "vertex-ai", Config.VERTEX_AI_MODELS, "voice", region, headless
+    ge_voice_results, ge_voice_transcriptions, ge_voice_errors, ge_voice_retries, ge_voice_failures = await _test_platform(
+        "ge", Config.GE_MODELS, "voice", region, headless
     )
 
-    results.update(vertex_text_results)
-    results.update(vertex_voice_results)
-    transcriptions.update(vertex_text_transcriptions)
-    transcriptions.update(vertex_voice_transcriptions)
-    error_traces.update(vertex_text_errors)
-    error_traces.update(vertex_voice_errors)
-    retry_counts.update(vertex_text_retries)
-    retry_counts.update(vertex_voice_retries)
-    failure_reasons.update(vertex_text_failures)
-    failure_reasons.update(vertex_voice_failures)
+    results.update(ge_text_results)
+    results.update(ge_voice_results)
+    transcriptions.update(ge_text_transcriptions)
+    transcriptions.update(ge_voice_transcriptions)
+    error_traces.update(ge_text_errors)
+    error_traces.update(ge_voice_errors)
+    retry_counts.update(ge_text_retries)
+    retry_counts.update(ge_voice_retries)
+    failure_reasons.update(ge_text_failures)
+    failure_reasons.update(ge_voice_failures)
 
     # Print summary and generate report
     _print_test_summary(results)
@@ -579,12 +603,12 @@ def _parse_test_name(test_name: str) -> tuple[str, str, str]:
     Returns:
         Tuple of (platform, model, test_type)
     """
-    if "google-ai-studio" in test_name:
+    if test_name.startswith("google-ai-studio-"):
         platform = "google-ai-studio"
-        model_and_type = test_name.replace("google-ai-studio-", "")
-    elif "vertex-ai" in test_name:
-        platform = "vertex-ai"
-        model_and_type = test_name.replace("vertex-ai-", "")
+        model_and_type = test_name[len("google-ai-studio-"):]
+    elif test_name.startswith("ge-"):
+        platform = "ge"
+        model_and_type = test_name[len("ge-"):]
     else:
         return "", "", ""
         
@@ -603,7 +627,7 @@ def _parse_test_name(test_name: str) -> tuple[str, str, str]:
 
 def _get_platform_display_name(platform: str) -> str:
     """Get display name for platform."""
-    return "Google AI Studio" if platform == "google-ai-studio" else "Vertex AI"
+    return "Google AI Studio" if platform == "google-ai-studio" else "Gemini Enterprise"
 
 def _format_test_result(success: bool) -> tuple[str, str]:
     """Format test result into icon and status."""
@@ -681,7 +705,7 @@ def _generate_detailed_results(results: dict, retry_counts: dict = None, failure
     content = """
 **Note**: The following model list includes both officially supported models and deprecated models. To see a list of the currently supported models, see:
 - **Gemini Live API**: Check the [Get started with Live API](https://ai.google.dev/gemini-api/docs/live#audio-generation)
-- **Vertex AI Live API**: Check the [official Vertex AI Live API documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/live-api)
+- **Gemini Enterprise Live API**: Check the [official Gemini Enterprise Live API documentation](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/live-api)
 
 """
 
@@ -711,8 +735,8 @@ def _generate_detailed_results(results: dict, retry_counts: dict = None, failure
                 if test_t in tests:
                     success, retry_count, failure_reason = tests[test_t]
                     icon, status = _format_test_result(success)
-                    # Check if model is native-audio and this is a text test
-                    if test_t == "text" and "native-audio" in model.lower():
+                    # Check if model is audio-only and this is a text test
+                    if test_t == "text" and is_audio_only_model(model):
                         label = "Text (audio transcript)"
                     else:
                         label = test_t.title()
@@ -805,7 +829,7 @@ def _generate_methodology_section() -> str:
 
 ### Platform Configuration
 - **Google AI Studio**: Uses GOOGLE_API_KEY with GOOGLE_GENAI_USE_VERTEXAI=FALSE
-- **Vertex AI**: Uses GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION with GOOGLE_GENAI_USE_VERTEXAI=TRUE
+- **Gemini Enterprise**: Uses GOOGLE_CLOUD_PROJECT and GOOGLE_CLOUD_LOCATION with GOOGLE_GENAI_USE_VERTEXAI=TRUE
 
 ### Text Chat Testing
 - Sends text query via ADK streaming API
@@ -873,26 +897,26 @@ def generate_test_report(results, test_type, output_file="test_report.md", trans
     adk_version = get_adk_version()
     report_content += f"""## Environment Information
 - **ADK Version**: {adk_version}
-- **Python Dependencies**: google-adk, google-cloud-speech, pyaudio, pydub, python-dotenv
+- **Python Dependencies**: google-adk, google-cloud-speech, pyaudio, pydub, python-dotenv (managed with uv)
 - **Audio Configuration**: Input 16kHz, Output 24kHz, PCM, Mono
 - **SSL Configuration**: Automatically configured using certifi
 
 ## Test Tool Usage
 ```bash
 # Run all tests (combined text and voice)
-python test_tool.py
+uv run python test_tool.py
 
 # Test specific platform only
-python test_tool.py --platform google-ai-studio
+uv run python test_tool.py --platform google-ai-studio
 
 # Test specific model
-python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp
+uv run python test_tool.py --platform ge --model gemini-3.8-live
 
 # Test with specific region
-python test_tool.py --platform vertex-ai --region us-west1
+uv run python test_tool.py --platform ge --region us-west1
 
 # Test specific model in specific region
-python test_tool.py --platform vertex-ai --model gemini-2.0-flash-exp --region europe-west1
+uv run python test_tool.py --platform ge --model gemini-live-2.5-flash-native-audio --region europe-west1
 ```
 
 ---
@@ -921,8 +945,8 @@ async def test_single_model_combined(platform: str, model: str, region: str = No
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(description="ADK Bidirectional Streaming Test Tool - Combined Text and Voice Testing")
-    parser.add_argument("--platform", choices=["google-ai-studio", "vertex-ai", "all"],
-                       default="all", help="Platform to test")
+    parser.add_argument("--platform", choices=["google-ai-studio", "ge", "all"],
+                       default="all", help="Platform to test (ge = Gemini Enterprise)")
     parser.add_argument("--model", help="Specific model to test")
     parser.add_argument("--region", help="Google Cloud region to use (overrides GOOGLE_CLOUD_LOCATION env var)")
     parser.add_argument("--headless", action="store_true",
@@ -936,7 +960,7 @@ def main():
         print("CI environment detected - running in headless mode")
     
     # Set SSL certificate file as required by ADK
-    os.environ["SSL_CERT_FILE"] = os.popen("python -m certifi").read().strip()
+    os.environ["SSL_CERT_FILE"] = certifi.where()
     
     if args.model:
         _run_single_model_tests(args)

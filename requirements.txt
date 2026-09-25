@@ -1,6 +1,0 @@
-google-adk
-python-dotenv
-google-cloud-speech
-pyaudio
-pydub
-audioop-lts; python_version >= "3.13"

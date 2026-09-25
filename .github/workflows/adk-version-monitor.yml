@@ -25,8 +25,8 @@ jobs:
         with:
           fetch-depth: 0  # Full history for proper git operations
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: '3.11'
 
@@ -75,9 +75,9 @@ jobs:
       - name: Install Python dependencies
         if: steps.should_run.outputs.run_tests == 'true'
         run: |
-          python -m pip install --upgrade pip
-          pip install google-adk==${{ steps.check_version.outputs.latest_version }}
-          pip install -r requirements.txt
+          # Pin google-adk in uv.lock to the version under test
+          uv lock --upgrade-package "google-adk==${{ steps.check_version.outputs.latest_version }}"
+          uv sync --locked
 
       - name: Authenticate to Google Cloud
         if: steps.should_run.outputs.run_tests == 'true'
@@ -108,7 +108,7 @@ jobs:
         continue-on-error: true
         run: |
           # Run tests in headless mode
-          GITHUB_ACTIONS=true python test_tool.py --headless
+          GITHUB_ACTIONS=true uv run --locked python test_tool.py --headless
 
           # Capture exit code
           TEST_EXIT_CODE=$?
@@ -161,8 +161,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Add test reports (timestamped + latest) and version file
-          git add test_report_*.md test_report.md current_adk_version.txt
+          # Add test reports (timestamped + latest), version file, and lock file
+          git add test_report_*.md test_report.md current_adk_version.txt uv.lock
 
           # Create commit message
           cat > /tmp/commit_msg.txt << EOF
