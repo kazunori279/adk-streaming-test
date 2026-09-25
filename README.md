@@ -403,6 +403,22 @@ All tests use the standardized question: **"What time is it now?"**
 5. Transcribes response using Google Cloud Speech-to-Text
 6. Validates transcribed content for time information
 
+### ADK Evaluation for Live Models (Not Adopted)
+
+ADK evaluation supports Live models through `EvalConfig.live_model_config`. We checked it against google-adk 2.10.0 in September 2026 and decided not to use it in this tool for now. It can grade answer quality, but it cannot replace the streaming checks above.
+
+What it would add:
+- **Correctness grading.** The keyword check passes a wrong time as long as the answer mentions one (for example, `gemini-3.1-flash-live-preview` has answered with a wrong time). A rubric-based judge (`rubric_based_final_response_quality_v1`) could fail wrong answers if the rubric included the current time at run time.
+- **Test cases as data.** Eval sets and the audio user simulator (`LlmAudioUserSimulator`) would allow more questions and multi-turn conversations without code changes.
+
+Why it cannot replace the current tests:
+- **It grades the output transcription, not the output audio.** `final_response` is built from `output_transcription`, and the judge only reads text parts. Broken, silent, or truncated audio passes as long as the transcript looks right. The voice test here transcribes the actual audio bytes with Google Cloud Speech-to-Text and fails when no audio arrives.
+- **It does not exercise automatic VAD.** Eval wraps each user turn in `send_activity_start()` / `send_activity_end()`. The voice test streams audio the way an app does and relies on server-side voice activity detection, which is how we found that `gemini-3.8-live` needs trailing silence before it responds.
+- **google_search is not visible as a tool call.** The search does run in live eval on both platforms and returns correct answers. It runs server-side, though, so `get_all_tool_calls()` is empty and `tool_trajectory_avg_score` cannot check it. Only `rubric_based_final_response_quality_v1` passes grounding metadata to the judge. Gemini Enterprise fills it with the search queries and sources; Google AI Studio returns empty grounding metadata.
+- **Cost.** Judge model calls add API cost and CI time.
+
+If this tool adopts ADK evaluation later, it should run as an extra mode for answer correctness alongside the existing text and voice tests.
+
 ## Test Reports
 
 The tool automatically generates comprehensive test reports including:
