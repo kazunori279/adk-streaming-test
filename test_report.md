@@ -1,9 +1,9 @@
 # ADK Bidirectional Streaming Test Report
 
 ## Test Summary
-- **Test Date**: 2026-10-13 19:00:50
+- **Test Date**: 2026-10-24 03:37:33
 - **Test Type**: COMBINED (Text + Voice)
-- **Google ADK Version**: 2.12.0
+- **Google ADK Version**: 2.13.0
 - **Total Tests**: 14
 - **Passed Tests**: 14
 - **Failed Tests**: 0
@@ -14,8 +14,8 @@
 - **Voice Tests**: 7/7 passed (100.0%)
 
 ### Retry Statistics
-- **Tests requiring retries**: 1/14
-- **Total retry attempts**: 2
+- **Tests requiring retries**: 0/14
+- **Total retry attempts**: 0
 
 ## Environment Configuration
 - **Google Cloud Project**: gcp-samples-ic0
@@ -31,7 +31,7 @@
 ### Google AI Studio
 
 **gemini-2.5-flash-native-audio-preview-09-2025**:
-  - Text (audio transcript): ✅ PASS (retries: 2)
+  - Text (audio transcript): ✅ PASS
   - Voice: ✅ PASS
 
 **gemini-2.5-flash-native-audio-preview-12-2025**:
@@ -66,21 +66,21 @@
 
 ### Google AI Studio
 
-**gemini-2.5-flash-native-audio-preview-09-2025**: "the current time in Tokyo Japan is 3:59 a.m."
+**gemini-2.5-flash-native-audio-preview-09-2025**: "the current time in Tokyo Japan is 12:35 p.m."
 
-**gemini-2.5-flash-native-audio-preview-12-2025**: "according to the search results the current time in Tokyo Japan is 3:59 a.m."
+**gemini-2.5-flash-native-audio-preview-12-2025**: "the current time in Tokyo Japan is 12:36 p.m."
 
-**gemini-3.1-flash-live-preview**: "it's currently 3:59 a.m. in Tokyo Japan"
+**gemini-3.1-flash-live-preview**: "it is 9:43 p.m. in Tokyo Japan on Saturday October 24th 2026"
 
-**gemini-3.8-live**: "it is currently 4 a.m. in Tokyo Japan"
+**gemini-3.8-live**: "it's currently 12:36 p.m. in Tokyo Japan"
 
-**gemini-3.8-live-extended-thinking**: "it is currently 4:00 a.m. on Wednesday in Tokyo Japan"
+**gemini-3.8-live-extended-thinking**: "the current time in Tokyo Japan is 12:36 p.m."
 
 ### Gemini Enterprise
 
-**gemini-live-2.5-flash-native-audio**: "the time in Tokyo Japan is 4:00 a.m."
+**gemini-live-2.5-flash-native-audio**: "it is 12:37 p.m. in Tokyo Japan right now"
 
-**gemini-3.8-live**: "it is currently 4:00 a.m. in Tokyo Japan"
+**gemini-3.8-live**: "the current time in Tokyo Japan is 12:37 p.m."
 
 ## Test Methodology
 
@@ -117,7 +117,7 @@
 - Transcribes response using Google Cloud Speech-to-Text for validation
 
 ## Environment Information
-- **ADK Version**: 2.12.0
+- **ADK Version**: 2.13.0
 - **Python Dependencies**: google-adk, google-cloud-speech, pyaudio, pydub, python-dotenv (managed with uv)
 - **Audio Configuration**: Input 16kHz, Output 24kHz, PCM, Mono
 - **SSL Configuration**: Automatically configured using certifi
