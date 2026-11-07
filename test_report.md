@@ -1,9 +1,9 @@
 # ADK Bidirectional Streaming Test Report
 
 ## Test Summary
-- **Test Date**: 2026-10-24 03:37:33
+- **Test Date**: 2026-11-07 04:59:08
 - **Test Type**: COMBINED (Text + Voice)
-- **Google ADK Version**: 2.13.0
+- **Google ADK Version**: 2.14.0
 - **Total Tests**: 14
 - **Passed Tests**: 14
 - **Failed Tests**: 0
@@ -66,21 +66,21 @@
 
 ### Google AI Studio
 
-**gemini-2.5-flash-native-audio-preview-09-2025**: "the current time in Tokyo Japan is 12:35 p.m."
+**gemini-2.5-flash-native-audio-preview-09-2025**: "the current time in Tokyo Japan is 1:57 p.m."
 
-**gemini-2.5-flash-native-audio-preview-12-2025**: "the current time in Tokyo Japan is 12:36 p.m."
+**gemini-2.5-flash-native-audio-preview-12-2025**: "the current time in Tokyo Japan is 1:57 p.m."
 
-**gemini-3.1-flash-live-preview**: "it is 9:43 p.m. in Tokyo Japan on Saturday October 24th 2026"
+**gemini-3.1-flash-live-preview**: "the current time in Tokyo Japan is 9:00 a.m. on Saturday November 7th 2026 they use Japan Standard time which is UTC +9 and they don't observe Daylight Saving Time Is there anything else you'd like to know"
 
-**gemini-3.8-live**: "it's currently 12:36 p.m. in Tokyo Japan"
+**gemini-3.8-live**: "it is currently 1:58 p.m. in Tokyo Japan"
 
-**gemini-3.8-live-extended-thinking**: "the current time in Tokyo Japan is 12:36 p.m."
+**gemini-3.8-live-extended-thinking**: "the current time is 7:44 a.m. in Tokyo Japan"
 
 ### Gemini Enterprise
 
-**gemini-live-2.5-flash-native-audio**: "it is 12:37 p.m. in Tokyo Japan right now"
+**gemini-live-2.5-flash-native-audio**: "it is 1:58 p.m. in Tokyo Japan"
 
-**gemini-3.8-live**: "the current time in Tokyo Japan is 12:37 p.m."
+**gemini-3.8-live**: "the current time in Tokyo Japan is 159 p.m."
 
 ## Test Methodology
 
@@ -117,7 +117,7 @@
 - Transcribes response using Google Cloud Speech-to-Text for validation
 
 ## Environment Information
-- **ADK Version**: 2.13.0
+- **ADK Version**: 2.14.0
 - **Python Dependencies**: google-adk, google-cloud-speech, pyaudio, pydub, python-dotenv (managed with uv)
 - **Audio Configuration**: Input 16kHz, Output 24kHz, PCM, Mono
 - **SSL Configuration**: Automatically configured using certifi
