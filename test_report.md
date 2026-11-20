@@ -1,9 +1,9 @@
 # ADK Bidirectional Streaming Test Report
 
 ## Test Summary
-- **Test Date**: 2026-11-13 05:28:56
+- **Test Date**: 2026-11-20 06:02:01
 - **Test Type**: COMBINED (Text + Voice)
-- **Google ADK Version**: 2.14.1
+- **Google ADK Version**: 2.15.0
 - **Total Tests**: 14
 - **Passed Tests**: 14
 - **Failed Tests**: 0
@@ -66,21 +66,21 @@
 
 ### Google AI Studio
 
-**gemini-2.5-flash-native-audio-preview-09-2025**: "the current time in Tokyo Japan is 2:27 p.m."
+**gemini-2.5-flash-native-audio-preview-09-2025**: "the current time in Tokyo Japan is 3 0 pm on Friday November 20th 2026"
 
-**gemini-2.5-flash-native-audio-preview-12-2025**: "the current time in Tokyo Japan is 227 p.m. on Friday November 13th 2026"
+**gemini-2.5-flash-native-audio-preview-12-2025**: "the current time in Tokyo Japan is 3 p.m."
 
-**gemini-3.1-flash-live-preview**: "it is 9:13 a.m. in Tokyo Japan is there anything else I can help you with"
+**gemini-3.1-flash-live-preview**: "the current time in Tokyo Japan is 300 p.m."
 
-**gemini-3.8-live**: "the current time in Tokyo is 227 p.m. on Friday November 13th 2026"
+**gemini-3.8-live**: "it is currently 301 p.m. in Tokyo Japan"
 
-**gemini-3.8-live-extended-thinking**: "the current time in Tokyo Japan is 2:28 p.m."
+**gemini-3.8-live-extended-thinking**: "the current time in Tokyo Japan is 301 p.m."
 
 ### Gemini Enterprise
 
-**gemini-live-2.5-flash-native-audio**: "right now it is 2:28 p.m. in Tokyo Japan"
+**gemini-live-2.5-flash-native-audio**: "it is 301 p.m. in Tokyo Japan"
 
-**gemini-3.8-live**: "the current time in Tokyo Japan is 2:28 p.m."
+**gemini-3.8-live**: "it is currently 301 p.m. in Tokyo Japan"
 
 ## Test Methodology
 
@@ -117,7 +117,7 @@
 - Transcribes response using Google Cloud Speech-to-Text for validation
 
 ## Environment Information
-- **ADK Version**: 2.14.1
+- **ADK Version**: 2.15.0
 - **Python Dependencies**: google-adk, google-cloud-speech, pyaudio, pydub, python-dotenv (managed with uv)
 - **Audio Configuration**: Input 16kHz, Output 24kHz, PCM, Mono
 - **SSL Configuration**: Automatically configured using certifi
